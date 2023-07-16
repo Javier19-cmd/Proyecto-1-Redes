@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "node-xmpp": "^1.1.0",
     "socket.io-client": "^4.7.1"
   }
 }

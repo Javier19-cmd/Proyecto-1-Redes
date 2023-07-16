@@ -1,28 +1,27 @@
-// const axios = require('axios');
+const xmpp = require('node-xmpp-client');
 
-// axios.get('http://alumchat.xyz')
-//   .then(response => {
-//     console.log(response.data);
-//     console.log("No hubo errores")
-//     // Aquí puedes manipular los datos recibidos
-//   })
-//   .catch(error => {
-//     console.log(error);
-//     // Manejo de errores
-//   });
+const client = new xmpp.Client({
+  jid: 'val20159',
+  password: '1234',
+  host: 'alumchat.xyz',
+  port: 5222,
+});
 
-const io = require('socket.io-client');
-const serverUrl = "http://alumchat.xyz:5222"
-const socket = io(serverUrl);
+client.on('connect', function() {
+  console.log('Conectado al servidor XMPP');
+});
 
-// Realizar el register al servidor.
-// Se tiene que mandar usuario y contraseña.
-// Si el usuario ya existe, se debe de mandar un error.
+client.on('online', function() {
+  console.log('Online');
+});
 
-user = "val20159"
-password = "1234"
+client.on('error', function(error) {
+  console.error('Error:', error);
+});
 
-socket.on('Register', {user, password}, (response) => {
-  console.log("Datos")
-    console.log(response)
-})
+// client.on('reconnect', function() {
+//   console.log('Reconectando al servidor XMPP');
+// });
+
+// client.connect()
+// console.log("Client: ", client);
