@@ -9,11 +9,15 @@ const client = new xmpp.Client({
 
 client.on('connect', function() {
   console.log('Conectado al servidor XMPP');
+
 });
 
-client.on('online', function() {
-  console.log('Online');
-});
+
+
+
+// client.on('online', function() {
+//   console.log('Online');
+// });
 
 client.on('error', function(error) {
   console.error('Error:', error);

@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "node-xmpp": "^1.1.0",
+    "simple-xmpp": "^2.3.1",
     "socket.io-client": "^4.7.1"
   }
 }
