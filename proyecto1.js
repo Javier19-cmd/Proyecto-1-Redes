@@ -12,12 +12,9 @@ client.on('connect', function() {
 
 });
 
-
-
-
-// client.on('online', function() {
-//   console.log('Online');
-// });
+client.on('online', function() {
+  console.log('Online');
+});
 
 client.on('error', function(error) {
   console.error('Error:', error);
