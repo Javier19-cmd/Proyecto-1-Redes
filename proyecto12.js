@@ -10,8 +10,6 @@ const serverPort = 5222;
 function inicioSesion(jid, password) {
   // Conexión TCP
   const client = net.connect({ host: serverHost, port: serverPort }, () => {
-    //console.log('Conexión establecida con el servidor XMPP');
-
     // Envío del inicio de sesión
     const xmlAuth = `<auth xmlns="urn:ietf:params:xml:ns:xmpp-sasl" mechanism="PLAIN">${Buffer.from(`${jid}\x00${jid}\x00${password}`).toString('base64')}</auth>`;
     client.write(xmlAuth);
@@ -19,93 +17,18 @@ function inicioSesion(jid, password) {
     // Envío del inicio de la secuencia XML
     const xmlStream = `<?xml version="1.0" encoding="UTF-8"?><stream:stream xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams" to="${serverHost}" version="1.0">`;
     client.write(xmlStream);
+
+    // Mostrar el menú después de iniciar sesión
+    mostrarMenu();
   });
 
-  // // Seteando el estado online.
-  // client.on('data', (data) => {
-  //   console.log('Datos recibidos del servidor XMPP:', data.toString());
-    
-  //   // Procesar la respuesta del servidor y realizar otras acciones según sea necesario
-    
-  // });
-  
-  // // Envío del presence después de haber iniciado sesión
-  // const xmlPresence = `
-  // <presence from="${jid}/pda">
-  //   <show>xa</show>
-  //   <status>down the rabbit hole!</status>
-  // </presence>
-  // `;
+  // Manejo de datos recibidos del servidor XMPP
+  client.on('data', (data) => {
+    console.log('Datos recibidos del servidor XMPP:', data.toString());
 
-  // Envío de datos al servidor XMPP
-  //client.write(xmlPresence);
+    // Procesar la respuesta del servidor y realizar otras acciones según sea necesario
+  });
 
-  
-  // // Envío de mensaje al usuario her20053@alumchat.xyz.
-  // const xmlMessage = `
-  // <message to="her20053@alumchat.xyz"
-  // from="${jid}/pda"
-  // type="chat"
-  // xml:lang="en">
-  //   <body>Hi!</body>
-  // </message>
-  // `;
-  
-  // // Envío de datos al servidor XMPP
-  // client.write(xmlMessage);
-  
-  /*
-  Haciendo un submenú con estas opciones: 
-    1. Enseñar todos los usuarios/contactos y su estado.
-    2. Agregar un usuario a mis contactos.
-    3. Comunicación 1 a 1 con cualquier usuario/contacto.
-    4. Participar en conversaciones grupales.
-    6. Definir un mensaje de presencia.
-    7. Enviar/recibir notificaciones.
-    8. Enviar/recibir archivos.
-    */
-   
-   // Creando un menú de opciones.
-    console.log("1. Enseñar todos los usuarios/contactos y su estado.");
-    console.log("2. Agregar un usuario a mis contactos.");
-    console.log("3. Comunicación 1 a 1 con cualquier usuario/contacto.");
-    console.log("4. Participar en conversaciones grupales.");
-    console.log("5. Definir un mensaje de presencia.");
-    console.log("6. Enviar/recibir notificaciones.");
-    console.log("7. Enviar/recibir archivos.");
-    console.log("8. Salir.")
-    
-    // Pidiendo la opción al usuario.
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
-
-    // Pidiendo la opción al usuario.
-    rl.question('¿Qué opción deseas?: ', (answer) => {
-      
-      // Definiendo mensaje de presencia.
-      if(answer == 5){
-        // Pidiendo el mensaje de presencia.
-        rl.question("Ingrese el mensaje de presencia: ", (message) => {
-          // Enviando el mensaje de presencia.
-          const xmlPresence = `
-          <presence from="${jid}/pda">
-            <show>xa</show>
-            <status>${message}</status>
-            </presence>
-            `;
-          // Envío de datos al servidor XMPP
-          client.write(xmlPresence);
-        })
-      }
-    })
-  
-  // // Revisando la presencia.
-  // client.on('data', (data) => {
-  //   console.log('Datos recibidos del servidor XMPP:', data.toString());
-  // })
-  
   // Manejo de errores
   client.on('error', (error) => {
     console.error('Error en la conexión con el servidor XMPP:', error);
@@ -114,6 +37,88 @@ function inicioSesion(jid, password) {
   // Cierre de la conexión
   client.on('end', () => {
     console.log('Conexión cerrada con el servidor XMPP');
+  });
+
+  // Función para mostrar el menú y pedir la opción al usuario.
+  function mostrarMenu() {
+    console.log("\n---- Menú de opciones ----");
+    console.log("1. Enseñar todos los usuarios/contactos y su estado.");
+    console.log("2. Agregar un usuario a mis contactos.");
+    console.log("3. Comunicación 1 a 1 con cualquier usuario/contacto.");
+    console.log("4. Participar en conversaciones grupales.");
+    console.log("5. Definir un mensaje de presencia.");
+    console.log("6. Enviar/recibir notificaciones.");
+    console.log("7. Enviar/recibir archivos.");
+    console.log("8. Salir.");
+
+    // Pidiendo la opción al usuario.
+    rl.question('¿Qué opción deseas?: ', (answer) => {
+      const option = parseInt(answer);
+
+      switch (option) {
+        case 1:
+          console.log("Opción 1 seleccionada: Enseñar todos los usuarios/contactos y su estado.");
+          // Lógica para la opción 1...
+          mostrarMenu();
+          break;
+        case 2:
+          console.log("Opción 2 seleccionada: Agregar un usuario a mis contactos.");
+          // Lógica para la opción 2...
+          mostrarMenu();
+          break;
+        case 3:
+          console.log("Opción 3 seleccionada: Comunicación 1 a 1 con cualquier usuario/contacto.");
+          // Lógica para la opción 3...
+          mostrarMenu();
+          break;
+        case 4:
+          console.log("Opción 4 seleccionada: Participar en conversaciones grupales.");
+          // Lógica para la opción 4...
+          mostrarMenu();
+          break;
+        case 5:
+          console.log("Opción 5 seleccionada: Definir un mensaje de presencia.");
+          // Pidiendo el mensaje de presencia.
+          rl.question("Ingrese el mensaje de presencia: ", (message) => {
+            // Enviando el mensaje de presencia.
+            const xmlPresence = `
+            <presence from="${jid}/pda">
+            <show>xa</show>
+            <status>${message}</status>
+            </presence>
+            `;
+            // Envío de datos al servidor XMPP
+            client.write(xmlPresence);
+            mostrarMenu();
+          });
+          break;
+        case 6:
+          console.log("Opción 6 seleccionada: Enviar/recibir notificaciones.");
+          // Lógica para la opción 6...
+          mostrarMenu();
+          break;
+        case 7:
+          console.log("Opción 7 seleccionada: Enviar/recibir archivos.");
+          // Lógica para la opción 7...
+          mostrarMenu();
+          break;
+        case 8:
+          console.log("Opción 8 seleccionada: Salir.");
+          rl.close();
+          client.end(); // Cerrar la conexión antes de salir
+          break;
+        default:
+          console.log("Opción no válida. Por favor, elige una opción válida.");
+          mostrarMenu();
+          break;
+      }
+    });
+  }
+
+  // Pidiendo la opción al usuario.
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
   });
 }
 
