@@ -1,28 +1,46 @@
-const xmpp = require('node-xmpp-client');
+const { Client } = require('stanza');
 
-const client = new xmpp.Client({
-  jid: 'val20159',
-  password: '1234',
-  host: 'alumchat.xyz',
-  port: 5222,
+// Datos de conexión
+const jid = 'val20159@alumchat.xyz';
+const password = '1234';
+const serverHost = 'alumchat.xyz';
+const serverPort = 5222;
+
+// Crear un cliente XMPP
+const client = new Client({
+  jid: jid,
+  password: password,
+  host: serverHost,
+  port: serverPort,
 });
 
-client.on('connect', function() {
-  console.log('Conectado al servidor XMPP');
+// Manejo de eventos de inicio de sesión
+client.on('session:started', () => {
+  console.log('Conexión establecida con el servidor XMPP');
 
+  // Obtener el roster
+  obtenerRoster();
 });
 
-client.on('online', function() {
-  console.log('Online');
+// Manejo de eventos de recepción de mensajes
+client.on('iq', (iq) => {
+  if (iq.is('iq') && iq.attrs.type === 'result') {
+    // Procesar la respuesta del roster (lista de contactos)
+    const items = iq.getChild('query').getChildElements('item');
+    items.forEach((item) => {
+      const jid = item.attrs.jid;
+      // Puedes hacer lo que necesites con los datos del contacto (JID, nombre, etc.)
+      console.log('Contacto:', jid);
+    });
+  }
 });
 
-client.on('error', function(error) {
-  console.error('Error:', error);
-});
+// Función para obtener el roster (lista de contactos)
+function obtenerRoster() {
+  // Construir y enviar la solicitud de roster
+  const iq = client.iq({ type: 'get' }).c('query', { xmlns: 'jabber:iq:roster' });
+  client.send(iq);
+}
 
-// client.on('reconnect', function() {
-//   console.log('Reconectando al servidor XMPP');
-// });
-
-// client.connect()
-// console.log("Client: ", client);
+// Conectar al servidor XMPP
+client.connect();
