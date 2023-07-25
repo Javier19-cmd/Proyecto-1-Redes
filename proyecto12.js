@@ -29,7 +29,7 @@ function connectToServer(username, password) {
                 client.write("<stream:stream to='alumchat.xyz' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' version='1.0'>");
 
                 // Agregándole al usuario el @alumchat.xyz.
-                
+              
                 // Mostrar menú de opciones
                 mostrarMenu();
             } else if (data.toString().includes('<failure')) {
@@ -45,32 +45,71 @@ function connectToServer(username, password) {
     });
 }
 
+
+function registerAccount(username, password) {
+  client.connect(5222, 'alumchat.xyz', function() {
+      console.log('Conectado al servidor XMPP');
+      client.write("<stream:stream to='alumchat.xyz' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' version='1.0'>");
+  });
+
+  client.on('data', function(data) {
+      if (data.toString().includes('<stream:features>')) {
+          // Enviar consulta de registro
+          const xmlRegister = `
+          <iq type="set" id="reg_1">
+            <query xmlns="jabber:iq:register">
+              <username>${username}</username>
+              <password>${password}</password>
+            </query>
+          </iq>
+          `;
+          client.write(xmlRegister);
+      } else if (data.toString().includes('<iq type="result"')) {
+          // Registro exitoso
+          console.log('Registro exitoso');
+      } else if (data.toString().includes('<iq type="error"')) {
+          // Error al registrar
+          console.log('Error al registrar', data.toString());
+      }
+  });
+
+  client.on('close', function() {
+      console.log('Conexión cerrada');
+  });
+}
+
+
+
 function showMenu() {
-    console.log('\nMenú de opciones:');
-    console.log('1. Iniciar sesión');
-    console.log('2. Registrarse');
-    console.log('3. Salir');
-    rl.question('\nSelecciona una opción: ', function(option) {
-        switch (option) {
-            case '1':
-                rl.question('\nIngresa tu nombre de usuario: ', function(username) {
-                    rl.question('\nIngresa tu contraseña: ', function(password) {
-                        connectToServer(username, password);
-                    });
-                });
-                break;
-            case '2':
-                console.log('Funcionalidad de registro no implementada aún');
-                showMenu();
-                break;
-            case '3':
-                rl.close();
-                break;
-            default:
-                console.log('Opción inválida, por favor intenta de nuevo');
-                showMenu();
-        }
-    });
+  console.log('\nMenú de opciones:');
+  console.log('1. Iniciar sesión');
+  console.log('2. Registrarse');
+  console.log('3. Salir');
+  rl.question('\nSelecciona una opción: ', function(option) {
+      switch (option) {
+          case '1':
+              rl.question('\nIngresa tu nombre de usuario: ', function(username) {
+                  rl.question('\nIngresa tu contraseña: ', function(password) {
+                      connectToServer(username, password);
+                  });
+              });
+              break;
+          case '2':
+              console.log('Opción 2 seleccionada: Registrarse');
+              rl.question('\nIngresa tu nombre de usuario: ', function(username) {
+                  rl.question('\nIngresa tu contraseña: ', function(password) {
+                      registerAccount(username, password)
+                  });
+              });
+              break;
+          case '3':
+              rl.close();
+              break;
+          default:
+              console.log('Opción inválida, por favor intenta de nuevo');
+              showMenu();
+      }
+  });
 }
 
 function mostrarMenu() {
@@ -143,7 +182,6 @@ function mostrarMenu() {
             mostrarMenu(jid);
           });
         });
-        break;
         mostrarMenu();
         break;
       case 5:
