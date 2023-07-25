@@ -27,8 +27,11 @@ function connectToServer(username, password) {
                 loggedIn = true;
                 // Reiniciar stream
                 client.write("<stream:stream to='alumchat.xyz' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' version='1.0'>");
+
+                // Agregándole al usuario el @alumchat.xyz.
+                
                 // Mostrar menú de opciones
-                mostrarMenu(username);
+                mostrarMenu();
             } else if (data.toString().includes('<failure')) {
                 // Error al iniciar sesión
                 console.log('Error al iniciar sesión', data.toString());
@@ -70,16 +73,24 @@ function showMenu() {
     });
 }
 
-function mostrarMenu(jid) { // Este es el menú que se le enseñará al usuario una vez se haya iniciado sesión.
+function mostrarMenu() {
+
+  jid = "val20159"
+
   console.log("\n---- Menú de opciones ----");
   console.log("1. Enseñar todos los usuarios/contactos y su estado.");
   console.log("2. Agregar un usuario a mis contactos.");
-  console.log("3. Comunicación 1 a 1 con cualquier usuario/contacto.");
-  console.log("4. Participar en conversaciones grupales.");
-  console.log("5. Definir un mensaje de presencia.");
-  console.log("6. Enviar/recibir notificaciones.");
-  console.log("7. Enviar/recibir archivos.");
-  console.log("8. Salir.");
+  console.log("3. Mostrar detalles de un contacto");
+  console.log("4. Comunicación 1 a 1 con cualquier usuario/contacto.");
+  console.log("5. Participar en conversaciones grupales.");
+  console.log("6. Definir un mensaje de presencia.");
+  console.log("7. Enviar/recibir notificaciones.");
+  console.log("8. Enviar/recibir archivos.");
+  console.log("9. Salir.");
+
+  client.on('data', function(data){
+    console.log("Recibido: " + data);
+  })
 
   // Pidiendo la opción al usuario.
   rl.question('¿Qué opción deseas?: ', (answer) => {
@@ -88,7 +99,21 @@ function mostrarMenu(jid) { // Este es el menú que se le enseñará al usuario 
     switch (option) {
       case 1:
         console.log("Opción 1 seleccionada: Enseñar todos los usuarios/contactos y su estado.");
-        // Lógica para la opción 1...
+        // Enseñando los contactos del usuario.
+        // Enviar la consulta de tipo roster
+        const xmlRoster = `
+        <iq from="${jid}" type="get">
+          <query xmlns="jabber:iq:roster"/>
+        </iq>
+        `;
+        client.write(xmlRoster);
+
+        // // Enviar la stanza de tipo presence
+        // const xmlPresence = `
+        // <presence from="${jid}" to="${jid}" type="probe"/>
+        // `;
+        // client.write(xmlPresence);
+
         mostrarMenu();
         break;
       case 2:
@@ -99,27 +124,45 @@ function mostrarMenu(jid) { // Este es el menú que se le enseñará al usuario 
       case 3:
         console.log("Opción 3 seleccionada: Comunicación 1 a 1 con cualquier usuario/contacto.");
         // Lógica para la opción 3...
+
+        // Pidiendo al usuario el
+
         mostrarMenu();
         break;
       case 4:
         console.log("Opción 4 seleccionada: Participar en conversaciones grupales.");
-        // Lógica para la opción 4...
+        rl.question('Ingresa el JID del destinatario: ', function(to) {
+          rl.question('Ingresa el contenido del mensaje: ', function(body) {
+            // Enviar el mensaje
+            const xmlMessage = `
+            <message from="${jid}" to="${to}" type="chat">
+              <body>${body}</body>
+            </message>
+            `;
+            client.write(xmlMessage);
+            mostrarMenu(jid);
+          });
+        });
+        break;
         mostrarMenu();
         break;
       case 5:
         console.log("Opción 5 seleccionada: Definir un mensaje de presencia.");
         // Pidiendo el mensaje de presencia.
         rl.question("Ingrese el mensaje de presencia: ", (message) => {
-          // Enviando el mensaje de presencia.
-          const xmlPresence = `
-          <presence from="${jid}/pda">
-            <show>xa</show>
-            <status>${message}</status>
-          </presence>
-          `;
-          // Envío de datos al servidor XMPP
-          client.write(xmlPresence);
-          mostrarMenu();
+
+        // Enviar el mensaje de presencia
+        const xmlPresence = `
+        <presence">
+          <show>xa</show>
+          <status>${message}</status>
+        </presence>
+        `;
+        
+        console.log("Mensaje de presencia: ", xmlPresence)
+
+        client.write(xmlPresence);
+        mostrarMenu();
         });
         break;
       case 6:
@@ -134,9 +177,12 @@ function mostrarMenu(jid) { // Este es el menú que se le enseñará al usuario 
         break;
       case 8:
         console.log("Opción 8 seleccionada: Salir.");
-        rl.close();
-        client.end(); // Cerrar la conexión antes de salir
         break;
+
+      case 9:
+        console.log("Opción 9 seleccionada: Salir.");
+        rl.close()
+        client.end()
       default:
         console.log("Opción no válida. Por favor, elige una opción válida.");
         mostrarMenu();
