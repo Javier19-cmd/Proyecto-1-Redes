@@ -31,7 +31,7 @@ function connectToServer(username, password) {
                 // Agregándole al usuario el @alumchat.xyz.
               
                 // Mostrar menú de opciones
-                mostrarMenu();
+                mostrarMenu(username);
             } else if (data.toString().includes('<failure')) {
                 // Error al iniciar sesión
                 console.log('Error al iniciar sesión', data.toString());
@@ -99,22 +99,24 @@ function showMenu() {
               rl.question('\nIngresa tu nombre de usuario: ', function(username) {
                   rl.question('\nIngresa tu contraseña: ', function(password) {
                       registerAccount(username, password)
+                      showMenu()
                   });
               });
               break;
           case '3':
+              console.log('Opción 3 seleccionada: Salir');
               rl.close();
+              client.end();
               break;
-          default:
+              default:
               console.log('Opción inválida, por favor intenta de nuevo');
               showMenu();
       }
   });
 }
 
-function mostrarMenu() {
+function mostrarMenu(jid) {
 
-  jid = "val20159"
 
   console.log("\n---- Menú de opciones ----");
   console.log("1. Enseñar todos los usuarios/contactos y su estado.");
@@ -125,12 +127,13 @@ function mostrarMenu() {
   console.log("6. Definir un mensaje de presencia.");
   console.log("7. Enviar/recibir notificaciones.");
   console.log("8. Enviar/recibir archivos.");
-  console.log("9. Salir.");
-
+  console.log("9. Eliminar cuenta");
+  console.log("10. Salir.");
+  
   client.on('data', function(data){
     console.log("Recibido: " + data);
   })
-
+  
   // Pidiendo la opción al usuario.
   rl.question('¿Qué opción deseas?: ', (answer) => {
     const option = parseInt(answer);
@@ -142,7 +145,7 @@ function mostrarMenu() {
         // Enviar la consulta de tipo roster
         const xmlRoster = `
         <iq from="${jid}" type="get">
-          <query xmlns="jabber:iq:roster"/>
+        <query xmlns="jabber:iq:roster"/>
         </iq>
         `;
         client.write(xmlRoster);
@@ -152,7 +155,7 @@ function mostrarMenu() {
         // <presence from="${jid}" to="${jid}" type="probe"/>
         // `;
         // client.write(xmlPresence);
-
+        
         mostrarMenu();
         break;
       case 2:
@@ -160,7 +163,7 @@ function mostrarMenu() {
         // Lógica para la opción 2...
         mostrarMenu();
         break;
-      case 3:
+        case 3:
         console.log("Opción 3 seleccionada: Comunicación 1 a 1 con cualquier usuario/contacto.");
         // Lógica para la opción 3...
 
@@ -189,9 +192,9 @@ function mostrarMenu() {
         // Pidiendo el mensaje de presencia.
         rl.question("Ingrese el mensaje de presencia: ", (message) => {
 
-        // Enviar el mensaje de presencia
-        const xmlPresence = `
-        <presence">
+          // Enviar el mensaje de presencia
+          const xmlPresence = `
+          <presence">
           <show>xa</show>
           <status>${message}</status>
         </presence>
@@ -203,8 +206,8 @@ function mostrarMenu() {
         mostrarMenu();
         });
         break;
-      case 6:
-        console.log("Opción 6 seleccionada: Enviar/recibir notificaciones.");
+        case 6:
+          console.log("Opción 6 seleccionada: Enviar/recibir notificaciones.");
         // Lógica para la opción 6...
         mostrarMenu();
         break;
@@ -216,11 +219,38 @@ function mostrarMenu() {
       case 8:
         console.log("Opción 8 seleccionada: Salir.");
         break;
-
+        
       case 9:
-        console.log("Opción 9 seleccionada: Salir.");
+
+      /* 
+      
+      user: sam20222
+      password: 1234
+      
+      */
+
+        rl.question('¿Estás seguro de que deseas eliminar tu cuenta? (s/n): ', function(confirm) {
+          if (confirm.toLowerCase() === 's') {
+            // Enviar la consulta de tipo register con el elemento remove
+            const xmlRemove = `
+            <iq type="set" id="unreg_1">
+              <query xmlns="jabber:iq:register">
+                <remove/>
+              </query>
+            </iq>
+            `;
+            client.write(xmlRemove);
+            showMenu(); // Mostrar el menú original después de eliminar la cuenta
+          }
+        });
+        
+        showMenu()
+        break
+      case 10: 
+        console.log("Opción 10 seleccionada: Salir.");
         rl.close()
         client.end()
+        break
       default:
         console.log("Opción no válida. Por favor, elige una opción válida.");
         mostrarMenu();
