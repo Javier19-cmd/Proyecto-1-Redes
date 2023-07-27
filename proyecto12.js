@@ -1,3 +1,5 @@
+// Usar el PLAIN para los xml.
+
 const net = require('net');
 const readline = require('readline');
 const client = new net.Socket();
@@ -56,7 +58,7 @@ function registerAccount(username, password) {
       if (data.toString().includes('<stream:features>')) {
           // Enviar consulta de registro
           const xmlRegister = `
-          <iq type="set" id="reg_1">
+          <iq type="set" id="reg_1" mechanism='PLAIN'>
             <query xmlns="jabber:iq:register">
               <username>${username}</username>
               <password>${password}</password>
@@ -168,23 +170,25 @@ function mostrarMenu(jid) {
         // Lógica para la opción 3...
 
         // Pidiendo al usuario el
-
-        mostrarMenu();
-        break;
-      case 4:
-        console.log("Opción 4 seleccionada: Participar en conversaciones grupales.");
         rl.question('Ingresa el JID del destinatario: ', function(to) {
           rl.question('Ingresa el contenido del mensaje: ', function(body) {
             // Enviar el mensaje
             const xmlMessage = `
             <message from="${jid}" to="${to}" type="chat">
               <body>${body}</body>
+              <auth xmlns="urn:ietf:params:xml:ns:xmpp-sasl" mechanism="PLAIN">${auth}</auth>
             </message>
             `;
+            
             client.write(xmlMessage);
             mostrarMenu(jid);
           });
         });
+
+        mostrarMenu();
+        break;
+      case 4:
+        console.log("Opción 4 seleccionada: Participar en conversaciones grupales.");
         mostrarMenu();
         break;
       case 5:
