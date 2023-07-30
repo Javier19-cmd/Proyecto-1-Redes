@@ -136,27 +136,13 @@ async function login(username, password) {
     const mainMenu = () => {
       rl.question("¿Qué opción deseas?: ", (answer) => {
         switch (answer) {
-          case "1":
-            console.log("Mostrando todos los usuarios y su estado...")
-            // Lógica para la subopción 1
-            rl.question("¿Qué acción deseas realizar? (Escribe el número de la opción)\n1. Mostrar usuarios en línea\n2. Mostrar usuarios fuera de línea\n", (subAnswer) => {
-              switch (subAnswer) {
-                case "1":
-                  console.log("Mostrando usuarios en línea...")
-                  // Aquí puedes agregar la lógica para mostrar usuarios en línea
-                  mainMenu(); // Vuelve al menú principal después de completar la subopción
-                  break;
-                case "2":
-                  console.log("Mostrando usuarios fuera de línea...")
-                  // Aquí puedes agregar la lógica para mostrar usuarios fuera de línea
-                  mainMenu(); // Vuelve al menú principal después de completar la subopción
-                  break;
-                default:
-                  console.log("Subopción inválida.")
-                  mainMenu(); // Vuelve al menú principal en caso de subopción inválida
-              }
-            });
+          case '1':
+            console.log('Mostrando todos los usuarios y su estado...');
+            
+            mainMenu();
             break;
+        
+          
           case "2":
             console.log("Agregando un usuario a mis contactos...")
             // Lógica para la subopción 2
@@ -235,9 +221,22 @@ async function login(username, password) {
             break;
           case "9":
             console.log("Eliminando cuenta...")
-            // Lógica para la subopción 9
-            mainMenu(); // Vuelve al menú principal después de completar la opción
-            break;
+            // Lógica para la subopción 9.
+
+            // Escribiendo la stanza para eliminar la cuenta.
+            const stanza = xml(
+              'iq',
+              { type: 'set', id: 'unreg1' },
+              xml(
+                'query',
+                { xmlns: 'jabber:iq:register' },
+                xml('remove')
+              )
+            );
+
+            // Enviando la stanza al servidor XMPP.
+            xmpp.send(stanza);
+            process.exit();
           default:
             console.log("Opción inválida.")
             mainMenu(); // Vuelve al menú principal en caso de opción inválida
