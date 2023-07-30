@@ -3,6 +3,8 @@ const debug = require("@xmpp/debug");
 const { unsubscribe } = require("diagnostics_channel");
 const net = require("net");
 const cliente = new net.Socket();
+const fetch = require('node-fetch');
+
 
 // Password: 1234
 
@@ -132,6 +134,7 @@ async function login(username, password) {
     console.log("7. Enviar/recibir notificaciones")
     console.log("8. Enviar/recibir archivos")
     console.log("9. Eliminar cuenta")
+    console.log("10. Cerrar sesión")
 
     const mainMenu = () => {
       rl.question("¿Qué opción deseas?: ", (answer) => {
@@ -143,15 +146,43 @@ async function login(username, password) {
             break;
         
           
+          // Agregar un usuario a los contactos
           case "2":
-            console.log("Agregando un usuario a mis contactos...")
-            // Lógica para la subopción 2
-            mainMenu(); // Vuelve al menú principal después de completar la opción
+            console.log("Agregando un usuario a mis contactos...");
+            rl.question("JID del usuario que deseas agregar: ", (userJID) => {
+              // Enviar una solicitud de suscripción al usuario que deseas agregar
+              const presence = xml(
+                'presence',
+                { to: userJID, type: 'subscribe' }
+              );
+
+              xmpp.send(presence).then(() => {
+                console.log(`Solicitud de suscripción enviada a ${userJID}`);
+                mainMenu(); // Vuelve al menú principal después de completar la opción
+              }).catch((err) => {
+                console.error('Error al enviar la solicitud de suscripción:', err);
+                mainMenu(); // Vuelve al menú principal en caso de error
+              });
+            });
             break;
+
+            // Mostrar detalles de un contacto
           case "3":
-            console.log("Mostrando detalles de un contacto...")
-            // Lógica para la subopción 3
-            mainMenu(); // Vuelve al menú principal después de completar la opción
+            console.log("Mostrando detalles de un contacto...");
+            rl.question("JID del contacto que deseas ver detalles: ", (contactJID) => {
+              // Buscar el contacto en la lista de contactos (roster)
+              const contact = xmpp.contacts[contactJID];
+
+              if (contact) {
+                console.log(`JID del contacto: ${contact.jid}`);
+                console.log(`Estado de presencia: ${contact.presence.show}`);
+                console.log(`Mensaje personalizado: ${contact.presence.status}`);
+              } else {
+                console.log(`El contacto ${contactJID} no está en tu lista de contactos.`);
+              }
+
+              mainMenu(); // Vuelve al menú principal después de completar la opción
+            });
             break;
           case "4":
             console.log("Comunicación 1 a 1 con cualquier usuario/contacto...");
@@ -237,6 +268,18 @@ async function login(username, password) {
             // Enviando la stanza al servidor XMPP.
             xmpp.send(stanza);
             process.exit();
+    
+          case "10":
+          
+            console.log("Cerrando sesión...")
+            
+            xmpp.stop().catch(console.error);
+              xmpp.on("offline", () => {
+                console.log("offline");
+                showMenu()
+              });
+            break;
+          
           default:
             console.log("Opción inválida.")
             mainMenu(); // Vuelve al menú principal en caso de opción inválida
