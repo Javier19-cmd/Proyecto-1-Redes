@@ -110,23 +110,62 @@ function login(username, password) {
 
     console.log("Inició sesión con este address: ", address)
 
-    // const changePasswordRequest = xml(
-    //   "iq",
-    //   { type: "set", id: "change_password" },
-    //   xml(
-    //     "query",
-    //     { xmlns: "jabber:iq:register" },
-    //     xml("username", {}, "your_username"),
-    //     xml("password", {}, "170301M@rzo")
-    //   )
-    // );
+    /**
+     * Creando un menú con estas opciones: 
+     * 1. Mostrar todos los usuarios/contactos y su estado.
+     * 2. Agregar un usuario a los contactos.
+     * 3. Mostrar detalles de contacto de un usuario.
+     * 4. Comunicación 1 a 1 con cualquier usuario/contacto.
+     * 5. Participar en conversaciones grupales.
+     * 6. Definir mensaje de presencia.
+     * 7. Enviar/recibir notificaciones.
+     * 8. Enviar/recibir archivos.
+     * 9. Eliminar cuenta del servidor.
+     */
 
-    // xmpp.send(changePasswordRequest).then((response) => {
-    //   // Procesar la respuesta del servidor, que debería indicar si el cambio de contraseña fue exitoso o no.
-    //   console.log("Contraseña cambiada exitosamente.");
-    // }).catch((error) => {
-    //   console.error("Error al cambiar la contraseña:", error);
-    // });
+    console.log("1. Enseñar todos los usuarios y su estado")
+    console.log("2. Agregar un usuario a mis contactos")
+    console.log("3. Mostrar detalles de un contacto")
+    console.log("4. Comunicación 1 a 1 con cualquier usuario/contacto")
+    console.log("5. Participar en conversaciones grupales")
+    console.log("6. Definir un mensaje de presencia")
+    console.log("7. Enviar/recibir notificaciones")
+    console.log("8. Enviar/recibir archivos")
+    console.log("9. Eliminar cuenta")
+
+    rl.question("¿Qué opción deseas?: ", (answer) => {
+      switch (answer) {
+        case "1":
+          console.log("Mostrando todos los usuarios y su estado...")
+          break;
+        case "2":
+          console.log("Agregando un usuario a mis contactos...")
+          break;
+        case "3":
+          console.log("Mostrando detalles de un contacto...")
+          break;
+        case "4":
+          console.log("Comunicación 1 a 1 con cualquier usuario/contacto...")
+
+          break;
+        case "5":
+          console.log("Participando en conversaciones grupales...")
+          break;
+        case "6":
+          console.log("Definiendo un mensaje de presencia...")
+          break;
+        case "7":
+          console.log("Enviando/recibiendo notificaciones...")
+          break;
+        case "8":
+          console.log("Enviando/recibiendo archivos...")
+          break;
+        case "9":
+          console.log("Eliminando cuenta...")
+          break;
+        default:
+          console.log("Opción inválida.")
+      }})
 
     // // Sends a chat message to "gon20362@alumchat.xyz"
     // const message = xml(
