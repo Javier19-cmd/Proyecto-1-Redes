@@ -81,7 +81,7 @@ function showMenu() {
   });
 }
 
-function login(username, password) {
+async function login(username, password) {
   // Implementa aquí la lógica para iniciar sesión.
   // Por ejemplo, puedes pedir al usuario su nombre de usuario y contraseña y validarlas.
 
@@ -108,7 +108,7 @@ function login(username, password) {
     // Makes itself available
     await xmpp.send(xml("presence"));
 
-    console.log("Inició sesión con este address: ", address)
+    // console.log("Inició sesión con este address: ", address)
 
     /**
      * Creando un menú con estas opciones: 
@@ -133,40 +133,121 @@ function login(username, password) {
     console.log("8. Enviar/recibir archivos")
     console.log("9. Eliminar cuenta")
 
-    rl.question("¿Qué opción deseas?: ", (answer) => {
-      switch (answer) {
-        case "1":
-          console.log("Mostrando todos los usuarios y su estado...")
-          break;
-        case "2":
-          console.log("Agregando un usuario a mis contactos...")
-          break;
-        case "3":
-          console.log("Mostrando detalles de un contacto...")
-          break;
-        case "4":
-          console.log("Comunicación 1 a 1 con cualquier usuario/contacto...")
-
-          break;
-        case "5":
-          console.log("Participando en conversaciones grupales...")
-          break;
-        case "6":
-          console.log("Definiendo un mensaje de presencia...")
-          break;
-        case "7":
-          console.log("Enviando/recibiendo notificaciones...")
-          break;
-        case "8":
-          console.log("Enviando/recibiendo archivos...")
-          break;
-        case "9":
-          console.log("Eliminando cuenta...")
-          break;
-        default:
-          console.log("Opción inválida.")
-      }})
-
+    const mainMenu = () => {
+      rl.question("¿Qué opción deseas?: ", (answer) => {
+        switch (answer) {
+          case "1":
+            console.log("Mostrando todos los usuarios y su estado...")
+            // Lógica para la subopción 1
+            rl.question("¿Qué acción deseas realizar? (Escribe el número de la opción)\n1. Mostrar usuarios en línea\n2. Mostrar usuarios fuera de línea\n", (subAnswer) => {
+              switch (subAnswer) {
+                case "1":
+                  console.log("Mostrando usuarios en línea...")
+                  // Aquí puedes agregar la lógica para mostrar usuarios en línea
+                  mainMenu(); // Vuelve al menú principal después de completar la subopción
+                  break;
+                case "2":
+                  console.log("Mostrando usuarios fuera de línea...")
+                  // Aquí puedes agregar la lógica para mostrar usuarios fuera de línea
+                  mainMenu(); // Vuelve al menú principal después de completar la subopción
+                  break;
+                default:
+                  console.log("Subopción inválida.")
+                  mainMenu(); // Vuelve al menú principal en caso de subopción inválida
+              }
+            });
+            break;
+          case "2":
+            console.log("Agregando un usuario a mis contactos...")
+            // Lógica para la subopción 2
+            mainMenu(); // Vuelve al menú principal después de completar la opción
+            break;
+          case "3":
+            console.log("Mostrando detalles de un contacto...")
+            // Lógica para la subopción 3
+            mainMenu(); // Vuelve al menú principal después de completar la opción
+            break;
+          case "4":
+            console.log("Comunicación 1 a 1 con cualquier usuario/contacto...");
+            // Lógica para la subopción 4
+            xmpp.on('stanza', async (stanza) => {
+              if (stanza.is('message') && stanza.attrs.type === 'chat') {
+                const from = stanza.attrs.from;
+                const body = stanza.getChildText('body');
+            
+                console.log(`Mensaje recibido de ${from}: ${body}`);
+              }
+            });
+            rl.question("¿Con quién deseas comunicarte?: ", async (user) => {
+              // Pidiendo el mensaje que se desea mandar.
+              rl.question("Mensaje: ", async (message) => {
+                
+                const fullUser = user + "@alumchat.xyz";
+                
+                // Enviando el mensaje.
+                const messageToSend = xml(
+                  "message",
+                  { type: "chat", to: fullUser }, // Usamos el usuario completo con el dominio
+                  xml("body", {}, message),
+                );
+                await xmpp.send(messageToSend);
+                mainMenu(); // Vuelve al menú principal después de completar la opción
+              });
+            });
+            break;
+          case "5":
+            console.log("Participando en conversaciones grupales...")
+            // Lógica para la subopción 5
+            mainMenu(); // Vuelve al menú principal después de completar la opción
+            break;
+          case "6":
+            console.log("Definiendo un mensaje de presencia...");
+          
+            // Pedir el estado de presencia al usuario
+            rl.question("Estado de presencia (ejemplo: 'disponible', 'ocupado', 'no disponible'): ", async (presenceState) => {
+              // Pedir el mensaje personalizado para el estado de presencia
+              rl.question("Mensaje personalizado: ", async (customMessage) => {
+                const presence = xml(
+                  'presence',
+                  {},
+                  xml('show', {}, presenceState),
+                  xml('status', {}, customMessage)
+                );
+          
+                // Enviar el mensaje de presencia al servidor XMPP
+                await xmpp.send(presence);
+          
+                // Imprimiendo el mensaje de presencia con el usuario y la respuesta del servidor.
+                console.log(`Mensaje de presencia enviado a ${username}: ${presence.toString()}`);
+                mainMenu(); // Vuelve al menú principal después de completar la opción
+              });
+            });
+            break;          
+          case "7":
+            console.log("Enviando/recibiendo notificaciones...")
+            // Lógica para la subopción 7
+            mainMenu(); // Vuelve al menú principal después de completar la opción
+            break;
+          case "8":
+            console.log("Enviando/recibiendo archivos...")
+            // Lógica para la subopción 8
+            mainMenu(); // Vuelve al menú principal después de completar la opción
+            break;
+          case "9":
+            console.log("Eliminando cuenta...")
+            // Lógica para la subopción 9
+            mainMenu(); // Vuelve al menú principal después de completar la opción
+            break;
+          default:
+            console.log("Opción inválida.")
+            mainMenu(); // Vuelve al menú principal en caso de opción inválida
+        }
+      });
+    };
+    
+    // Iniciando el menú principal
+    mainMenu();
+    
     // // Sends a chat message to "gon20362@alumchat.xyz"
     // const message = xml(
     //   "message",
