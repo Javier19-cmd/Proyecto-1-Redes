@@ -205,31 +205,50 @@ async function login(username, password) {
             });
             break;
 
-            // Mostrar detalles de un contacto
+          // Mostrar detalles de un contacto
           case "3":
             console.log("Mostrando detalles de un contacto...");
             rl.question("JID del contacto que deseas ver detalles: ", (contactJID) => {
-              
-              const newC = contactJID + "@alumchat.xyz"
-
-              console.log(xmpp.contacts)
-
-              // // Buscar el contacto en la lista de contactos (roster)
-              // const contact = xmpp.contacts[newC];
-
-              // console.log("Contacto: ", contact)
-
-              // if (contact) {
-              //   console.log(`JID del contacto: ${contact.jid}`);
-              //   console.log(`Estado de presencia: ${contact.presence.show}`);
-              //   console.log(`Mensaje personalizado: ${contact.presence.status}`);
-              // } else {
-              //   console.log(`El contacto ${contactJID} no está en tu lista de contactos.`);
-              // }
-
-              mainMenu(); // Vuelve al menú principal después de completar la opción
+              const newC = contactJID + "@alumchat.xyz";
+          
+              // Evento para recibir la respuesta del roster del servidor
+              xmpp.on('stanza', (stanza) => {
+                if (stanza.is('iq') && stanza.attrs.type === 'result') {
+                  const query = stanza.getChild('query', 'jabber:iq:roster');
+                  const contacts = query.getChildren('item');
+          
+                  // Buscar el contacto en la lista de contactos (roster)
+                  const contact = contacts.find((contact) => contact.attrs.jid === newC);
+          
+                  if (contact) {
+                    console.log(`Detalles del contacto ${contactJID}:`);
+                    console.log(`- JID: ${contact.attrs.jid}`);
+                    console.log(`- Nombre: ${contact.attrs.name || contact.attrs.jid}`);
+                    // Puedes acceder a más detalles del contacto aquí, como el estado de presencia, mensaje personalizado, etc.
+                  } else {
+                    console.log(`El contacto ${contactJID} no está en tu lista de contactos.`);
+                  }
+          
+                  mainMenu(); // Vuelve al menú principal después de completar la opción
+                }
+              });
+          
+              // Solicitar el roster al servidor
+              const rosterRequest = xml(
+                'iq',
+                { type: 'get', id: 'roster' },
+                xml('query', { xmlns: 'jabber:iq:roster' })
+              );
+          
+              // Enviar la solicitud de roster al servidor
+              xmpp.send(rosterRequest).then(() => {
+                console.log('Solicitud de roster enviada al servidor.');
+              }).catch((err) => {
+                console.error('Error al enviar la solicitud de roster:', err);
+              });
             });
             break;
+            
           case "4":
             console.log("Comunicación 1 a 1 con cualquier usuario/contacto...");
             // Lógica para la subopción 4
