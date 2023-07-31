@@ -240,11 +240,43 @@ async function login(username, password) {
               });
             });
             break;          
+          // Enviando/recibiendo notificaciones (mensajes de chat)
           case "7":
-            console.log("Enviando/recibiendo notificaciones...")
-            // Lógica para la subopción 7
-            mainMenu(); // Vuelve al menú principal después de completar la opción
+            console.log("Enviando/recibiendo notificaciones (mensajes de chat)...");
+            rl.question("JID del contacto al que deseas enviar una notificación: ", (contactJID) => {
+              rl.question("Mensaje: ", async (message) => {
+
+                const newC = contactJID + "@alumchat.xyz"
+
+                // Crear un mensaje XMPP de tipo "chat" para enviar la notificación
+                const chatMessage = xml(
+                  "message",
+                  { to: newC, type: "chat" },
+                  xml("body", {}, message)
+                );
+
+                try {
+                  // Enviar el mensaje XMPP al contacto
+                  await xmpp.send(chatMessage);
+                  console.log("Notificación enviada exitosamente.");
+                } catch (err) {
+                  console.error("Error al enviar la notificación:", err);
+                }
+
+                mainMenu(); // Vuelve al menú principal después de enviar la notificación
+              });
+            });
+
+            // Evento para recibir notificaciones (mensajes de chat)
+            xmpp.on("stanza", (stanza) => {
+              if (stanza.is("message") && stanza.attrs.type === "chat") {
+                const from = stanza.attrs.from;
+                const body = stanza.getChildText("body");
+                console.log(`Notificación recibida de ${from}: ${body}`);
+              }
+            });
             break;
+
           case "8":
             console.log("Enviando/recibiendo archivos...")
             // Lógica para la subopción 8
