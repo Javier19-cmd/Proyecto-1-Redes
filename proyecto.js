@@ -4,7 +4,7 @@ const { unsubscribe } = require("diagnostics_channel");
 const net = require("net");
 const cliente = new net.Socket();
 const fetch = require('node-fetch');
-
+// const muc = require('node-xmpp-muc');
 
 // Password: 1234
 
@@ -100,7 +100,7 @@ async function login(username, password) {
 
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-  // debug(xmpp, true);
+  //debug(xmpp, true);
 
   xmpp.on("error", (err) => {
     console.error(err);
@@ -168,7 +168,11 @@ async function login(username, password) {
                   const name = contact.attrs.name || jid;
                   const subscription = contact.attrs.subscription;
           
-                  console.log(`- JID: ${jid}, Nombre: ${name}, Suscripción: ${subscription}`);
+                  // Obtener el estado de presencia del contacto (si está disponible)
+                  const presence = xmpp.presences && xmpp.presences[jid];
+                  const status = presence && presence.status ? presence.status : 'Offline';
+
+                  console.log(`- JID: ${jid}, Nombre: ${name}, Suscripción: ${subscription}, Estado: ${status}`);
                 });
           
                 xmpp.on('presence', (presence) => {
@@ -183,7 +187,7 @@ async function login(username, password) {
             });
           
             mainMenu();
-            break;          
+            break;         
         
           // Agregar un usuario a los contactos
           case "2":
@@ -197,6 +201,26 @@ async function login(username, password) {
 
               xmpp.send(presence).then(() => {
                 console.log(`Solicitud de suscripción enviada a ${userJID}`);
+
+                // Escuchar las solicitudes entrantes (suscripciones)
+                xmpp.on('stanza', (stanza) => {
+                  if (stanza.is('presence') && stanza.attrs.type === 'subscribe') {
+                    const fromJID = stanza.attrs.from;
+
+                    // Aceptar automáticamente la solicitud de suscripción
+                    const acceptPresence = xml(
+                      'presence',
+                      { to: fromJID, type: 'subscribed' }
+                    );
+
+                    xmpp.send(acceptPresence).then(() => {
+                      console.log(`Solicitud de suscripción aceptada de ${fromJID}`);
+                    }).catch((err) => {
+                      console.error('Error al enviar la respuesta de suscripción:', err);
+                    });
+                  }
+                });
+
                 mainMenu(); // Vuelve al menú principal después de completar la opción
               }).catch((err) => {
                 console.error('Error al enviar la solicitud de suscripción:', err);
@@ -251,37 +275,98 @@ async function login(username, password) {
             
           case "4":
             console.log("Comunicación 1 a 1 con cualquier usuario/contacto...");
-            // Lógica para la subopción 4
-            xmpp.on('stanza', async (stanza) => {
-              if (stanza.is('message') && stanza.attrs.type === 'chat') {
-                const from = stanza.attrs.from;
-                const body = stanza.getChildText('body');
-            
-                console.log(`Mensaje recibido de ${from}: ${body}`);
-              }
-            });
-            rl.question("¿Con quién deseas comunicarte?: ", async (user) => {
-              // Pidiendo el mensaje que se desea mandar.
-              rl.question("Mensaje: ", async (message) => {
-                
-                const fullUser = user + "@alumchat.xyz";
-                
-                // Enviando el mensaje.
-                const messageToSend = xml(
-                  "message",
-                  { type: "chat", to: fullUser }, // Usamos el usuario completo con el dominio
-                  xml("body", {}, message),
-                );
-                await xmpp.send(messageToSend);
+          
+            // Función para manejar los mensajes entrantes
+            function handleIncomingMessages() {
+              xmpp.on('stanza', (stanza) => {
+                if (stanza.is('message') && stanza.attrs.type === 'chat') {
+                  const from = stanza.attrs.from;
+                  const body = stanza.getChildText('body');
+                  if (body !== null) {
+                    console.log(`${from}: ${body}`);
+                  }
+                }
+              });
+            }
+          
+            rl.question("¿Con quién deseas comunicarte?: ", (user) => {
+              const fullUser = user + "@alumchat.xyz";
+              handleIncomingMessages(); // Comenzar a escuchar los mensajes entrantes
+              // console.log("\n")
+              // rl.setPrompt('Tu: ');
+              // rl.prompt();
+          
+              rl.on('line', async (message) => {
+                if (message.trim() === 'exit') {
+                  // Salir del chat al escribir "exit"
+                  rl.close();
+                } else {
+                  // Enviando el mensaje.
+                  const messageToSend = xml(
+                    "message",
+                    { type: "chat", to: fullUser }, // Usamos el usuario completo con el dominio
+                    xml("body", {}, message),
+                  );
+                  await xmpp.send(messageToSend);
+                }
+              });
+          
+              rl.on('close', () => {
+                console.log('Chat finalizado.');
                 mainMenu(); // Vuelve al menú principal después de completar la opción
               });
             });
             break;
+                    
           case "5":
             console.log("Participando en conversaciones grupales...")
-            // Lógica para la subopción 5
-            mainMenu(); // Vuelve al menú principal después de completar la opción
+            // Función para unirse a un chat grupal
+            async function joinGroupChat(groupName) {
+              try {
+                await xmpp.send(new xmpp.on('presence', { to: groupName }));
+                console.log(`Te has unido al grupo ${groupName}`);
+              } catch (error) {
+                console.error('Error al unirse al grupo:', error);
+              }
+            }
+
+            // Función para recibir mensajes de chat grupal
+            function handleGroupChatMessages() {
+              xmpp.on('stanza', (stanza) => {
+                if (stanza.is('message') && stanza.attrs.type === 'groupchat') {
+                  const from = stanza.attrs.from;
+                  const body = stanza.getChildText('body');
+
+                  console.log(`Mensaje recibido del grupo ${from}: ${body}`);
+                }
+              });
+            }
+
+
+            // Pidiendo el nombre del chat.
+            rl.question("Nombre del chat grupal: ", (groupName) => {
+              // Unirse al chat grupal
+              joinGroupChat(groupName);
+              handleGroupChatMessages();
+              rl.on('line', async (message) => {
+                if (message.trim() === 'exit') {
+                  // Salir del chat al escribir "exit"
+                  rl.close();
+                } else {
+                  // Enviando el mensaje.
+                  const messageToSend = xml(
+                    "message",
+                    { type: "groupchat", to: groupName }, // Usamos el usuario completo con el dominio
+                    xml("body", {}, message),
+                  );
+                  await xmpp.send(messageToSend);
+                }
+              });
+              })
+              // Definición del menu principal
+              mainMenu();
             break;
+        
           case "6":
             console.log("Definiendo un mensaje de presencia...");
           
@@ -343,10 +428,56 @@ async function login(username, password) {
             break;
 
           case "8":
-            console.log("Enviando/recibiendo archivos...")
-            // Lógica para la subopción 8
-            mainMenu(); // Vuelve al menú principal después de completar la opción
+            console.log("Enviando/recibiendo archivos...");
+
+            // Función para enviar un archivo a un contacto específico
+            async function enviarArchivo(contactJID, filePath) {
+              const newC = contactJID + '@alumchat.xyz';
+
+              // Leer el archivo para obtener su nombre y tamaño
+              const fileStats = fs.statSync(filePath);
+              const fileName = filePath.split('/').pop(); // Obtener el nombre del archivo desde la ruta
+              const fileSize = fileStats.size;
+
+              // Crear un enlace de descarga para el archivo
+              const fileURL = `http://${xmppDomain}:5222/files/${fileName}`;
+
+              // Crear el elemento de "Out of Band Data" con los metadatos del archivo
+              const oobData = xml(
+                'x',
+                { xmlns: 'jabber:x:oob' },
+                xml('url', {}, fileURL),
+                xml('desc', {}, `Archivo: ${fileName}, Tamaño: ${fileSize} bytes`)
+              );
+
+              // Crear el mensaje con el archivo adjunto
+              const message = xml(
+                'message',
+                { to: newC, type: 'chat' },
+                xml('body', {}, `Aquí tienes un archivo para descargar: ${fileURL}`),
+                oobData
+              );
+
+              // Enviar el mensaje al contacto
+              await xmppClient.send(message);
+              console.log('Archivo enviado con éxito.');
+            }
+
+            // Solicitar información para enviar el archivo
+            rl.question('JID del contacto al que deseas enviar el archivo: ', (contactJID) => {
+              rl.question('Ruta del archivo que deseas enviar: ', (filePath) => {
+                enviarArchivo(contactJID, filePath)
+                  .then(() => {
+                    mainMenu(); // Vuelve al menú principal después de completar la opción
+                  })
+                  .catch((err) => {
+                    console.error('Error al enviar el archivo:', err);
+                    mainMenu(); // Vuelve al menú principal después de completar la opción
+                  });
+              });
+            });
             break;
+
           case "9":
             console.log("Eliminando cuenta...")
             // Lógica para la subopción 9.
