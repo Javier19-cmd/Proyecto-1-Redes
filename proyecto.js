@@ -141,11 +141,50 @@ async function login(username, password) {
         switch (answer) {
           case '1':
             console.log('Mostrando todos los usuarios y su estado...');
-            
-            mainMenu();
-            break;
-        
           
+            // Solicitar el roster al servidor
+            const rosterRequest = xml(
+              'iq',
+              { type: 'get', id: 'roster' },
+              xml('query', { xmlns: 'jabber:iq:roster' })
+            );
+          
+            // Enviar la solicitud de roster al servidor
+            xmpp.send(rosterRequest).then(() => {
+              console.log('Solicitud de roster enviada al servidor.');
+            }).catch((err) => {
+              console.error('Error al enviar la solicitud de roster:', err);
+            });
+          
+            // Evento para recibir la respuesta del roster del servidor
+            xmpp.on('stanza', (stanza) => {
+              if (stanza.is('iq') && stanza.attrs.type === 'result') {
+                const query = stanza.getChild('query', 'jabber:iq:roster');
+                const contacts = query.getChildren('item');
+          
+                console.log('Lista de contactos:');
+                contacts.forEach((contact) => {
+                  const jid = contact.attrs.jid;
+                  const name = contact.attrs.name || jid;
+                  const subscription = contact.attrs.subscription;
+          
+                  console.log(`- JID: ${jid}, Nombre: ${name}, Suscripción: ${subscription}`);
+                });
+          
+                xmpp.on('presence', (presence) => {
+                  const from = presence.attrs.from;
+                  const show = presence.getChildText('show');
+                  const status = presence.getChildText('status');
+          
+                  console.log(`Presencia recibida de ${from}: show=${show}, status=${status}`);
+                });
+                // Evento para recibir las presencias de los contactos
+              }
+            });
+          
+            mainMenu();
+            break;          
+        
           // Agregar un usuario a los contactos
           case "2":
             console.log("Agregando un usuario a mis contactos...");
@@ -170,16 +209,23 @@ async function login(username, password) {
           case "3":
             console.log("Mostrando detalles de un contacto...");
             rl.question("JID del contacto que deseas ver detalles: ", (contactJID) => {
-              // Buscar el contacto en la lista de contactos (roster)
-              const contact = xmpp.contacts[contactJID];
+              
+              const newC = contactJID + "@alumchat.xyz"
 
-              if (contact) {
-                console.log(`JID del contacto: ${contact.jid}`);
-                console.log(`Estado de presencia: ${contact.presence.show}`);
-                console.log(`Mensaje personalizado: ${contact.presence.status}`);
-              } else {
-                console.log(`El contacto ${contactJID} no está en tu lista de contactos.`);
-              }
+              console.log(xmpp.contacts)
+
+              // // Buscar el contacto en la lista de contactos (roster)
+              // const contact = xmpp.contacts[newC];
+
+              // console.log("Contacto: ", contact)
+
+              // if (contact) {
+              //   console.log(`JID del contacto: ${contact.jid}`);
+              //   console.log(`Estado de presencia: ${contact.presence.show}`);
+              //   console.log(`Mensaje personalizado: ${contact.presence.status}`);
+              // } else {
+              //   console.log(`El contacto ${contactJID} no está en tu lista de contactos.`);
+              // }
 
               mainMenu(); // Vuelve al menú principal después de completar la opción
             });
