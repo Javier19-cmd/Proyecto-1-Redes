@@ -124,19 +124,57 @@ async function login(username, password) {
      * 8. Enviar/recibir archivos.
      * 9. Eliminar cuenta del servidor.
      */
-
-    console.log("1. Enseñar todos los usuarios y su estado")
-    console.log("2. Agregar un usuario a mis contactos")
-    console.log("3. Mostrar detalles de un contacto")
-    console.log("4. Comunicación 1 a 1 con cualquier usuario/contacto")
-    console.log("5. Participar en conversaciones grupales")
-    console.log("6. Definir un mensaje de presencia")
-    console.log("7. Enviar/recibir notificaciones")
-    console.log("8. Enviar/recibir archivos")
-    console.log("9. Eliminar cuenta")
-    console.log("10. Cerrar sesión")
-
+    
     const mainMenu = () => {
+      
+      const messages = []; // Lista para almacenar todos los mensajes recibidos
+
+      xmpp.on('stanza', (stanza) => {
+        // Verificar que sea un mensaje y que el tipo sea 'chat'
+        if (stanza.is('message') && stanza.attrs.type === 'chat') {
+          const from = stanza.attrs.from;
+          const body = stanza.getChildText('body');
+          if (body !== null) {
+            // Almacenar el mensaje en la lista messages
+            messages.push(`${from}: ${body}`);
+          }
+        }
+      });
+      
+      // Función para imprimir el último mensaje recibido
+      function printLastMessage() {
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage !== undefined) {
+          console.log(`Último mensaje recibido: ${lastMessage}`);
+        } else {
+          console.log("No se han recibido mensajes.");
+        }
+      }
+      
+      // Llamar a la función para imprimir el último mensaje cada 10 segundos
+      setInterval(printLastMessage, 5000); // 5000 ms = 5 segundos
+      
+      // Función para mostrar el menú de opciones
+      const opciones = () => {
+        console.log("1. Enseñar todos los usuarios y su estado");
+        console.log("2. Agregar un usuario a mis contactos");
+        console.log("3. Mostrar detalles de un contacto");
+        console.log("4. Comunicación 1 a 1 con cualquier usuario/contacto");
+        console.log("5. Participar en conversaciones grupales");
+        console.log("6. Definir un mensaje de presencia");
+        console.log("7. Enviar/recibir notificaciones");
+        console.log("8. Enviar/recibir archivos");
+        console.log("9. Eliminar cuenta");
+        console.log("10. Cerrar sesión");
+      };
+      
+      opciones()
+
+      // // Mostrar el menú de opciones
+      // setInterval(opciones, 6500);
+      
+
+
       rl.question("¿Qué opción deseas?: ", (answer) => {
         switch (answer) {
           case '1':
