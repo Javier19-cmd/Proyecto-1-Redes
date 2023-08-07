@@ -4,6 +4,7 @@ const { unsubscribe } = require("diagnostics_channel");
 const net = require("net");
 const cliente = new net.Socket();
 const fetch = require('node-fetch');
+const { join } = require("path");
 // const muc = require('node-xmpp-muc');
 
 // Password: 1234
@@ -236,6 +237,68 @@ async function login(username, password) {
       }
     }
 
+    // Creando el cuarto.
+    async function createGroupChat(roomJid, nickname) {
+      
+      roomJid = roomJid + "@conference.alumchat.xyz"
+      
+      try {
+        await xmpp.send(xml('presence', { to: roomJid + '/' + nickname }));
+        console.log('Joined group chat:', roomJid);
+
+        // Mandando un mensaje al chat.
+        const message = xml(
+          "message",
+          { type: "groupchat", to: roomJid },
+          xml("body", {}, `Hello, this is a message from ${nickname}!`),
+        );
+        await xmpp.send(message).catch((err)=>{console.warn(err)});
+
+        xmpp.on('stanza', async (stanza) => {
+          if (stanza.is('message') && stanza.getChild('body')) {
+            const { from, body } = stanza;
+            console.log('Message received from', from, ':', body);
+          }
+        });
+
+      } catch (error) {
+        console.error('Error joining group chat:', error.toString());
+      }
+    }
+    
+    async function joinGroupChat(roomJid, nickname) {
+      
+      console.log("Room JID: ", roomJid)
+
+      roomJid = roomJid + "@conference.alumchat.xyz"
+      
+      try {
+        await xmpp.send(xml('presence', { to: roomJid + '/' + nickname }));
+        console.log('Joined group chat:', roomJid);
+
+        // Mandando un mensaje al chat.
+        const message = xml(
+          "message",
+          { type: "groupchat", to: roomJid },
+          xml("body", {}, `Hello, this is a message from ${nickname}!`),
+        );
+
+        xmpp.on('stanza', async (stanza) => {
+          if (stanza.is('message') && stanza.getChild('body')) {
+            const { from, body } = stanza;
+            console.log('Message received from', from, ':', body);
+          }
+        });
+
+        await xmpp.send(message).catch((err)=>{console.warn(err)});
+
+
+      } catch (error) {
+        console.error('Error joining group chat:', error.toString());
+      }
+    }
+    
+
     
       // Llamar a la función para imprimir el último mensaje cada 10 segundos
       //setInterval(printLastMessage, 10000); // 5000 ms = 5 segundos
@@ -465,21 +528,27 @@ async function login(username, password) {
                     
           case "5":
             console.log("Participando en conversaciones grupales...");
+
             rl.question("¿Deseas unirte a una sala existente o crear una nueva sala? (Unir/Crear): ", (respuesta) => {
               const opcion = respuesta.toLowerCase();
               if (opcion === "unir") {
                 rl.question("Ingresa el nombre de la sala a la que deseas unirte: ", (nombreSala) => {
-                  unirseASala(nombreSala);
+
+                  console.log("Nombre sala: ", nombreSala)
+
+                  joinGroupChat(nombreSala, username);
                 });
               } else if (opcion === "crear") {
                 rl.question("Ingresa el nombre de la nueva sala que deseas crear: ", (nombreSala) => {
-                  crearSala(nombreSala);
+                  createGroupChat(nombreSala, username);
                 });
               } else {
                 console.log("Opción no válida. Volviendo al menú principal.");
                 mainMenu();
               }
             });
+
+
             break;
         
           case "6":
