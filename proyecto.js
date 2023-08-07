@@ -1,4 +1,4 @@
-const { client, xml } = require("@xmpp/client");
+const { client, xml, jid } = require("@xmpp/client");
 const debug = require("@xmpp/debug");
 const { unsubscribe } = require("diagnostics_channel");
 const net = require("net");
@@ -126,33 +126,119 @@ async function login(username, password) {
      */
     
     const mainMenu = () => {
-      
-      const messages = []; // Lista para almacenar todos los mensajes recibidos
 
-      xmpp.on('stanza', (stanza) => {
-        // Verificar que sea un mensaje y que el tipo sea 'chat'
-        if (stanza.is('message') && stanza.attrs.type === 'chat') {
-          const from = stanza.attrs.from;
-          const body = stanza.getChildText('body');
-          if (body !== null) {
-            // Almacenar el mensaje en la lista messages
-            messages.push(`${from}: ${body}`);
-          }
-        }
-      });
+    const MAX_MESSAGE_LENGTH = 50; // Longitud máxima del mensaje a mostrar
       
-      // Función para imprimir el último mensaje recibido
-      function printLastMessage() {
-        const lastMessage = messages[messages.length - 1];
-        if (lastMessage !== undefined) {
-          console.log(`Último mensaje recibido: ${lastMessage}`);
-        } else {
-          console.log("No se han recibido mensajes.");
+    const messages = []; // Lista para almacenar todos los mensajes recibidos
+
+    xmpp.on('stanza', (stanza) => {
+      // Verificar que sea un mensaje y que el tipo sea 'chat'
+      if (stanza.is('message') && stanza.attrs.type === 'chat') {
+        const from = stanza.attrs.from;
+        const body = stanza.getChildText('body');
+        if (body !== null) {
+          // Almacenar el mensaje en la lista messages
+          messages.push(`${from}: ${body}`);
+
+          // Imprimir el último mensaje recibido inmediatamente después de recibirlo
+          printLastMessage();
+
+          // Llamando a la función opciones para que no se pierda el hilo de opciones.
+          opciones();
+          console.log("¿Qué opción deseas?")
         }
       }
-      
+    });
+
+    // Función para imprimir el último mensaje recibido
+    function printLastMessage() {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage !== undefined) {
+        if (lastMessage.length > MAX_MESSAGE_LENGTH) {
+          const truncatedMessage = lastMessage.substring(0, MAX_MESSAGE_LENGTH) + '...';
+          console.log(`Último mensaje recibido: ${truncatedMessage}`);
+        } else {
+          console.log(`Último mensaje recibido: ${lastMessage}`);
+        }
+      } else {
+        console.log("No se han recibido mensajes.");
+      }
+    }
+
+    async function unirseASala(nombreSala) {
+      const roomJID = jid(`${nombreSala}@conference.alumchat.xyz`);
+      try {
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout
+        });
+    
+        rl.on('line', async (message) => {
+          if (message.trim() === 'exit') {
+            // Salir del chat al escribir "exit"
+            rl.close();
+          } else {
+            // Enviar el mensaje a la sala
+            const messageToSend = xml(
+              'message', 
+              { type: 'chat', to: roomJID }, 
+              xml('body', {}, message)
+              );
+            await xmpp.send(messageToSend);
+          }
+        });
+    
+        // Unirse a la sala
+        await xmpp.send(xml('presence', { to: roomJID }));
+        console.log(`Te has unido a la sala "${nombreSala}"`);
+    
+        // Suscribirse a los mensajes del grupo (stanza)
+        xmpp.on('stanza', (message) => {
+          if (message.is('message') && message.attrs.type === 'chat') {
+            const from = message.attrs.from;
+            const body = message.getChildText('body');
+            if (body) {
+              console.log(`${from}: ${body}`);
+            }
+          }
+        });
+    
+        rl.on('close', () => {
+          console.log('Saliendo de la sala...');
+          mainMenu(); // Vuelve al menú principal cuando el usuario cierra el programa
+        });
+    
+        console.log("Puedes escribir mensajes para enviar a la sala. Escribe 'exit' para salir.");
+      } catch (error) {
+        console.error(`Error al unirse a la sala "${nombreSala}":`, error.message);
+      }
+    }
+    
+    
+    async function crearSala(nombreSala) {
+      const roomJID = jid(`${nombreSala}@conference.alumchat.xyz`);
+      try {
+        await xmpp.send(
+          xml('iq', { type: 'set' }, 
+            xml('query', { xmlns: 'http://jabber.org/protocol/muc#owner' },
+              xml('x', { xmlns: 'jabber:x:data', type: 'submit' },
+                xml('field', { var: 'FORM_TYPE' },
+                  xml('value', {}, 'http://jabber.org/protocol/muc#roomconfig')
+                )
+              )
+            )
+          )
+        );
+        console.log(`Se ha creado la sala "${nombreSala}" con JID: ${roomJID}`);
+        unirseASala(nombreSala);
+      } catch (error) {
+        console.error(`Error al crear la sala "${nombreSala}":`, error.message);
+      }
+    }
+
+    
       // Llamar a la función para imprimir el último mensaje cada 10 segundos
-      setInterval(printLastMessage, 5000); // 5000 ms = 5 segundos
+      //setInterval(printLastMessage, 10000); // 5000 ms = 5 segundos
       
       // Función para mostrar el menú de opciones
       const opciones = () => {
@@ -175,7 +261,7 @@ async function login(username, password) {
       
 
 
-      rl.question("¿Qué opción deseas?: ", (answer) => {
+      rl.question("¿Qué opción deseas?: ", async (answer) => {
         switch (answer) {
           case '1':
             console.log('Mostrando todos los usuarios y su estado...');
@@ -230,6 +316,45 @@ async function login(username, password) {
           // Agregar un usuario a los contactos
           case "2":
             console.log("Agregando un usuario a mis contactos...");
+            
+            //agregarUsuario()
+
+            // Enviar la consulta para obtener las solicitudes de amistad
+            const iq = xml('iq', {
+              type: 'get',
+              id: 'get_friend_requests',
+            }).c('query', {
+              xmlns: 'jabber:iq:roster',
+            });
+
+            // Enviar el IQ stanza y esperar la respuesta
+            const result = await xmpp.send(iq);
+
+            // Procesar la respuesta y extraer las solicitudes de amistad
+            const friendRequests = [];
+            if (result && result.is('iq') && result.attrs.type === 'result') {
+              const query = result.getChild('query', 'jabber:iq:roster');
+              if (query) {
+                const items = query.getChildren('item');
+                items.forEach((item) => {
+                  if (item.attrs.ask === 'subscribe') {
+                    friendRequests.push(item.attrs.jid);
+                  }
+                });
+              }
+            }
+
+            
+            // Mostrar las solicitudes de amistad
+            if (friendRequests.length > 0) {
+              console.log('Solicitudes de amistad recibidas:');
+              friendRequests.forEach((friendRequest) => {
+                console.log(`- ${friendRequest}`);
+              });
+            }
+
+
+
             rl.question("JID del usuario que deseas agregar: ", (userJID) => {
               // Enviar una solicitud de suscripción al usuario que deseas agregar
               const presence = xml(
@@ -239,32 +364,14 @@ async function login(username, password) {
 
               xmpp.send(presence).then(() => {
                 console.log(`Solicitud de suscripción enviada a ${userJID}`);
-
-                // Escuchar las solicitudes entrantes (suscripciones)
-                xmpp.on('stanza', (stanza) => {
-                  if (stanza.is('presence') && stanza.attrs.type === 'subscribe') {
-                    const fromJID = stanza.attrs.from;
-
-                    // Aceptar automáticamente la solicitud de suscripción
-                    const acceptPresence = xml(
-                      'presence',
-                      { to: fromJID, type: 'subscribed' }
-                    );
-
-                    xmpp.send(acceptPresence).then(() => {
-                      console.log(`Solicitud de suscripción aceptada de ${fromJID}`);
-                    }).catch((err) => {
-                      console.error('Error al enviar la respuesta de suscripción:', err);
-                    });
-                  }
-                });
-
                 mainMenu(); // Vuelve al menú principal después de completar la opción
               }).catch((err) => {
                 console.error('Error al enviar la solicitud de suscripción:', err);
                 mainMenu(); // Vuelve al menú principal en caso de error
               });
             });
+
+
             break;
 
           // Mostrar detalles de un contacto
@@ -357,52 +464,22 @@ async function login(username, password) {
             break;
                     
           case "5":
-            console.log("Participando en conversaciones grupales...")
-            // Función para unirse a un chat grupal
-            async function joinGroupChat(groupName) {
-              try {
-                await xmpp.send(new xmpp.on('presence', { to: groupName }));
-                console.log(`Te has unido al grupo ${groupName}`);
-              } catch (error) {
-                console.error('Error al unirse al grupo:', error);
+            console.log("Participando en conversaciones grupales...");
+            rl.question("¿Deseas unirte a una sala existente o crear una nueva sala? (Unir/Crear): ", (respuesta) => {
+              const opcion = respuesta.toLowerCase();
+              if (opcion === "unir") {
+                rl.question("Ingresa el nombre de la sala a la que deseas unirte: ", (nombreSala) => {
+                  unirseASala(nombreSala);
+                });
+              } else if (opcion === "crear") {
+                rl.question("Ingresa el nombre de la nueva sala que deseas crear: ", (nombreSala) => {
+                  crearSala(nombreSala);
+                });
+              } else {
+                console.log("Opción no válida. Volviendo al menú principal.");
+                mainMenu();
               }
-            }
-
-            // Función para recibir mensajes de chat grupal
-            function handleGroupChatMessages() {
-              xmpp.on('stanza', (stanza) => {
-                if (stanza.is('message') && stanza.attrs.type === 'groupchat') {
-                  const from = stanza.attrs.from;
-                  const body = stanza.getChildText('body');
-
-                  console.log(`Mensaje recibido del grupo ${from}: ${body}`);
-                }
-              });
-            }
-
-
-            // Pidiendo el nombre del chat.
-            rl.question("Nombre del chat grupal: ", (groupName) => {
-              // Unirse al chat grupal
-              joinGroupChat(groupName);
-              handleGroupChatMessages();
-              rl.on('line', async (message) => {
-                if (message.trim() === 'exit') {
-                  // Salir del chat al escribir "exit"
-                  rl.close();
-                } else {
-                  // Enviando el mensaje.
-                  const messageToSend = xml(
-                    "message",
-                    { type: "groupchat", to: groupName }, // Usamos el usuario completo con el dominio
-                    xml("body", {}, message),
-                  );
-                  await xmpp.send(messageToSend);
-                }
-              });
-              })
-              // Definición del menu principal
-              mainMenu();
+            });
             break;
         
           case "6":
