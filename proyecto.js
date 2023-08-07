@@ -257,7 +257,22 @@ async function login(username, password) {
         xmpp.on('stanza', async (stanza) => {
           if (stanza.is('message') && stanza.getChild('body')) {
             const { from, body } = stanza;
-            console.log('Message received from', from, ':', body);
+            //console.log('Message received from', from, ':', body);
+
+            // Verificando el tipo del body de la stanza.
+            if (stanza.attrs.type === "groupchat") {
+              // Obteniendo de quien se mandó el mensaje.
+              const from = stanza.attrs.from;
+              // Obteniendo el cuerpo del mensaje.
+              const body = stanza.getChildText("body");
+
+              // console.log(`${from}: ${body}`);
+
+              // Si el from y el body no están vacíos, entonces se imprime el mensaje.
+              if (from && body) {
+                console.log(`${from}: ${body}`);
+              }
+            }
           }
         });
 
@@ -285,8 +300,26 @@ async function login(username, password) {
 
         xmpp.on('stanza', async (stanza) => {
           if (stanza.is('message') && stanza.getChild('body')) {
-            const { from, body } = stanza;
-            console.log('Message received from', from, ':', body);
+            //const { from, body } = stanza;
+
+            //console.log("Message: ", stanza)
+
+            // Verificando el tipo del body de la stanza.
+            if (stanza.attrs.type === "groupchat") {
+              // Obteniendo de quien se mandó el mensaje.
+              const from = stanza.attrs.from;
+              // Obteniendo el cuerpo del mensaje.
+              const body = stanza.getChildText("body");
+
+              // console.log(`${from}: ${body}`);
+
+              // Si el from y el body no están vacíos, entonces se imprime el mensaje.
+              if (from && body) {
+                console.log(`${from}: ${body}`);
+              }
+            }
+
+            //console.log('Message received from', from, ':', body);
           }
         });
 
