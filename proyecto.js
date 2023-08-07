@@ -108,7 +108,7 @@ async function login(username, password) {
 
   xmpp.on("online", async (address) => {
     // Makes itself available
-    await xmpp.send(xml("presence"));
+    await xmpp.send(xml("presence", { type: "available" }))
 
     // console.log("Inició sesión con este address: ", address)
 
