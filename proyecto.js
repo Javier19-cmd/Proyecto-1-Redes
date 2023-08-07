@@ -246,13 +246,34 @@ async function login(username, password) {
         await xmpp.send(xml('presence', { to: roomJid + '/' + nickname }));
         console.log('Joined group chat:', roomJid);
 
-        // Mandando un mensaje al chat.
-        const message = xml(
-          "message",
-          { type: "groupchat", to: roomJid },
-          xml("body", {}, `Hello, this is a message from ${nickname}!`),
-        );
-        await xmpp.send(message).catch((err)=>{console.warn(err)});
+        // Leyendo lo que el usuario ingrese desde el teclado.
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout
+        });
+
+        rl.on('line', async (message) => {
+          if (message.trim() === 'exit') {
+            // Salir del chat al escribir "exit"
+            rl.close();
+          } else {
+
+          // Mandando un mensaje al chat.
+          const messageT = xml(
+            "message",
+            { type: "groupchat", to: roomJid },
+            xml("body", {}, message),
+          );
+          await xmpp.send(messageT).catch((err)=>{console.warn(err)});
+          }})
+
+        // // Mandando un mensaje al chat.
+        // const messageT = xml(
+        //   "message",
+        //   { type: "groupchat", to: roomJid },
+        //   xml("body", {}, `Hello, this is a message from ${nickname}!`),
+        // );
+        // await xmpp.send(messageT).catch((err)=>{console.warn(err)});
 
         xmpp.on('stanza', async (stanza) => {
           if (stanza.is('message') && stanza.getChild('body')) {
@@ -291,12 +312,26 @@ async function login(username, password) {
         await xmpp.send(xml('presence', { to: roomJid + '/' + nickname }));
         console.log('Joined group chat:', roomJid);
 
-        // Mandando un mensaje al chat.
-        const message = xml(
-          "message",
-          { type: "groupchat", to: roomJid },
-          xml("body", {}, `Hello, this is a message from ${nickname}!`),
-        );
+        // Leyendo lo que el usuario ingrese desde el teclado.
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout
+        });
+
+        rl.on('line', async (message) => {
+          if (message.trim() === 'exit') {
+            // Salir del chat al escribir "exit"
+            rl.close();
+          } else {
+
+          // Mandando un mensaje al chat.
+          const messageT = xml(
+            "message",
+            { type: "groupchat", to: roomJid },
+            xml("body", {}, message),
+          );
+          await xmpp.send(messageT).catch((err)=>{console.warn(err)});
+          }})
 
         xmpp.on('stanza', async (stanza) => {
           if (stanza.is('message') && stanza.getChild('body')) {
@@ -323,7 +358,7 @@ async function login(username, password) {
           }
         });
 
-        await xmpp.send(message).catch((err)=>{console.warn(err)});
+        //await xmpp.send(message).catch((err)=>{console.warn(err)});
 
 
       } catch (error) {
