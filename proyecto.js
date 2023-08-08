@@ -132,6 +132,8 @@ async function login(username, password) {
       
     const messages = []; // Lista para almacenar todos los mensajes recibidos
 
+    const soliAmi = [] // Lista para guardar las solicitudes de amistad.
+
     xmpp.on('stanza', (stanza) => {
       // Verificar que sea un mensaje y que el tipo sea 'chat'
       if (stanza.is('message') && stanza.attrs.type === 'chat') {
@@ -149,6 +151,15 @@ async function login(username, password) {
           console.log("¿Qué opción deseas?")
         }
       }
+
+      // Verificando si la stanza es solicitud de amistad.
+      if (stanza.is('presence') && stanza.attrs.type === 'subscribe') {
+        const from = stanza.attrs.from;
+        // console.log("From: ", from)
+        soliAmi.push(from);
+        console.log("Solicitud de amistad recibida de: ", from)
+      }
+
     });
 
     // Función para imprimir el último mensaje recibido
@@ -379,7 +390,7 @@ async function login(username, password) {
         console.log("4. Comunicación 1 a 1 con cualquier usuario/contacto");
         console.log("5. Participar en conversaciones grupales");
         console.log("6. Definir un mensaje de presencia");
-        console.log("7. Enviar/recibir notificaciones");
+        console.log("7. Enviar notificaciones");
         console.log("8. Enviar/recibir archivos");
         console.log("9. Eliminar cuenta");
         console.log("10. Cerrar sesión");
@@ -446,65 +457,68 @@ async function login(username, password) {
         
           // Agregar un usuario a los contactos
           case "2":
-            console.log("Agregando un usuario a mis contactos...");
-            
-            //agregarUsuario()
+            // Creando dos opciones.
+            // 1. Agregar un usuario a mis contactos.
+            // 2. Aceptar solicitudes.
+            console.log("1. Agregar un usuario a mis contactos");
+            console.log("2. Aceptar solicitudes");
 
-            // Enviar la consulta para obtener las solicitudes de amistad
-            const iq = xml('iq', {
-              type: 'get',
-              id: 'get_friend_requests',
-            }).c('query', {
-              xmlns: 'jabber:iq:roster',
-            });
+            rl.question("¿Qué opción deseas?: ", async (answer) => {
+              switch (answer) {
+                case '1':
+                  console.log("Agregando un usuario a mis contactos...");
+                  rl.question("JID del usuario que deseas agregar: ", (userJID) => {
 
-            // Enviar el IQ stanza y esperar la respuesta
-            const result = await xmpp.send(iq);
+                    // Agregando al userJID el @alumchat.xyz
+                    userJID = userJID + "@alumchat.xyz"
 
-            // Procesar la respuesta y extraer las solicitudes de amistad
-            const friendRequests = [];
-            if (result && result.is('iq') && result.attrs.type === 'result') {
-              const query = result.getChild('query', 'jabber:iq:roster');
-              if (query) {
-                const items = query.getChildren('item');
-                items.forEach((item) => {
-                  if (item.attrs.ask === 'subscribe') {
-                    friendRequests.push(item.attrs.jid);
-                  }
-                });
+                    // Enviar una solicitud de suscripción al usuario que deseas agregar
+                    const presence = xml(
+                      'presence',
+                      { to: userJID, type: 'subscribe' }
+                    );
+      
+                    xmpp.send(presence).then(() => {
+                      console.log(`Solicitud de suscripción enviada a ${userJID}`);
+                      mainMenu(); // Vuelve al menú principal después de completar la opción
+                    }).catch((err) => {
+                      console.error('Error al enviar la solicitud de suscripción:', err);
+                      mainMenu(); // Vuelve al menú principal en caso de error
+                    });
+                  });
+                  break;
+                case '2':
+                  console.log("Aceptando solicitudes...");
+
+                  // Escuchar solicitudes de suscripción (solicitudes de amistad)
+                  xmpp.on('stanza', async (stanza) => {
+                    const fromJid = stanza.attrs.from;
+                    // Verificar que sea una solicitud de suscripción
+                    if (stanza.is('presence') && stanza.attrs.type === 'subscribe') {
+                      // Preguntado si se quiere aceptar o no la solicitud.
+                      rl.question(`¿Deseas aceptar la solicitud de ${fromJid}? (s/n): `, async (answer) => {
+                        const response = answer.toLowerCase();
+                        if (response === 's') {
+                          // Aceptar la solicitud de suscripción
+                          await xmpp.send(xml('presence', { to: fromJid, type: 'subscribed' }));
+                          console.log(`Solicitud de suscripción aceptada de ${fromJid}`);
+                          mainMenu()
+                        } else {
+                          // Rechazar la solicitud de suscripción
+                          await xmpp.send(xml('presence', { to: fromJid, type: 'unsubscribed' }));
+                          console.log(`Solicitud de suscripción rechazada de ${fromJid}`);
+                          mainMenu()
+                        }
+                      }
+                    )};
+                  });
+                  break;
+                default:
+                  console.log("Opción inválida.")
+                  mainMenu(); // Vuelve al menú principal en caso de opción inválida
               }
-            }
-
-            
-            // Mostrar las solicitudes de amistad
-            if (friendRequests.length > 0) {
-              console.log('Solicitudes de amistad recibidas:');
-              friendRequests.forEach((friendRequest) => {
-                console.log(`- ${friendRequest}`);
-              });
-            }
-
-
-
-            rl.question("JID del usuario que deseas agregar: ", (userJID) => {
-              // Enviar una solicitud de suscripción al usuario que deseas agregar
-              const presence = xml(
-                'presence',
-                { to: userJID, type: 'subscribe' }
-              );
-
-              xmpp.send(presence).then(() => {
-                console.log(`Solicitud de suscripción enviada a ${userJID}`);
-                mainMenu(); // Vuelve al menú principal después de completar la opción
-              }).catch((err) => {
-                console.error('Error al enviar la solicitud de suscripción:', err);
-                mainMenu(); // Vuelve al menú principal en caso de error
-              });
             });
-
-
-            break;
-
+            break
           // Mostrar detalles de un contacto
           case "3":
             console.log("Mostrando detalles de un contacto...");

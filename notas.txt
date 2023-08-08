@@ -112,3 +112,44 @@ function inicioSesion(jid, password) {
     output: process.stdout
   });
 }
+
+---------------------------------------------------
+          // Agregar un usuario a los contactos
+          case "2":
+            console.log("Agregando un usuario a mis contactos...");
+            
+            //agregarUsuario()
+
+            // Enviar la consulta para obtener las solicitudes de amistad
+            const iq = xml('iq', {
+              type: 'get',
+              id: 'get_friend_requests',
+            }).c('query', {
+              xmlns: 'jabber:iq:roster',
+            });
+
+            // Enviar el IQ stanza y esperar la respuesta
+            const result = await xmpp.send(iq);
+
+            // Procesar la respuesta y extraer las solicitudes de amistad
+            const friendRequests = [];
+            if (result && result.is('iq') && result.attrs.type === 'result') {
+              const query = result.getChild('query', 'jabber:iq:roster');
+              if (query) {
+                const items = query.getChildren('item');
+                items.forEach((item) => {
+                  if (item.attrs.ask === 'subscribe') {
+                    friendRequests.push(item.attrs.jid);
+                  }
+                });
+              }
+            }
+
+            
+            // Mostrar las solicitudes de amistad
+            if (friendRequests.length > 0) {
+              console.log('Solicitudes de amistad recibidas:');
+              friendRequests.forEach((friendRequest) => {
+                console.log(`- ${friendRequest}`);
+              });
+            }
