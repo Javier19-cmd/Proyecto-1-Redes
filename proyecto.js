@@ -490,6 +490,42 @@ async function login(username, password) {
                 case '2':
                   console.log("Aceptando solicitudes...");
 
+                  // Revisando si hay solicitudes en la lista de soliAmi.
+                  if (soliAmi.length === 0) {
+                    console.log("No hay solicitudes de amistad.")
+                  } else {
+                    console.log("Solicitudes de amistad recibidas: ", soliAmi);
+                  
+                    // Preguntar al usuario si desea aceptar alguna solicitud
+                    rl.question('¿Quieres aceptar alguna solicitud? (s/n): ', async (answer) => {
+
+                      if (answer.toLowerCase() === 's') {
+                        rl.question('Ingresa el nombre de la persona a la que deseas aceptar: ', async (nombrePersona) => {
+                          const jidAceptado = `${nombrePersona}@alumchat.xyz`;
+                          
+                          // Buscando la persona en la lista.
+                          const solicitud = soliAmi.find((solicitud) => solicitud === jidAceptado);
+
+                          console.log("Solicitud: ", solicitud)
+                    
+                          if (solicitud) {
+                            await xmpp.send(xml('presence', { to: solicitud, type: 'subscribed' }));
+                            console.log(`Accepted subscription request from: ${solicitud}`);
+
+                            // Una vez se aceptó a la persona, se quita de la lista de soliAmi.
+                            const index = soliAmi.indexOf(solicitud);
+                            if (index > -1) {
+                              soliAmi.splice(index, 1);
+                            }
+
+                          } else {
+                            console.log("No se encontró solicitud de amistad para la persona indicada.");
+                          }
+                      })
+                    }});
+                  }
+
+
                   // Escuchar solicitudes de suscripción (solicitudes de amistad)
                   xmpp.on('stanza', async (stanza) => {
                     const fromJid = stanza.attrs.from;
