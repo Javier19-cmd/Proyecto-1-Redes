@@ -170,11 +170,24 @@ async function login(username, password) {
       if (stanza.is('message') && stanza.attrs.from.includes('@conference.alumchat.xyz')) {
         
         const chatG = stanza.attrs.from
-        
-        console.log(`Invitación para participar en el chat ${chatG}`)
 
-        // Guardando el nombre del chat en la lista.
-        gChat.push(chatG)
+        const to = stanza.attrs.to
+
+        // Quitando al to todo lo que está después del @
+        const usernames = to.split('@')[0];
+        
+        console.log("To: ", usernames, "username: ", username)
+
+        if (usernames !== username){
+          // Verificando que el to no sea el mismo del username.
+          
+          console.log(`Invitación para participar en el chat ${chatG}`)
+  
+          // Guardando el nombre del chat en la lista.
+          gChat.push(chatG)
+
+        }
+
 
         // // Preguntando a la persona si quiere entrar o no.
         // rl.question("¿Deseas entrar al chat grupal en este momento? (s/n): ", async (answer) => {
@@ -295,17 +308,17 @@ async function login(username, password) {
         console.log('Joined group chat:', roomJid);
 
         // Leyendo lo que el usuario ingrese desde el teclado.
-        const rl = readline.createInterface({
+        const rl2 = readline.createInterface({
           input: process.stdin,
           output: process.stdout
         });
 
-        rl.on('line', async (message) => {
+        rl2.on('line', async (message) => {
           if (message.trim() === 'exit') {
             // Salir del chat al escribir "exit"
             mainMenu()
           } else if (message.trim() === 'invitar') {
-            rl.question('Ingresa el nombre de la persona a la que deseas invitar: ', async (nombrePersona) => {
+            rl2.question('Ingresa el nombre de la persona a la que deseas invitar: ', async (nombrePersona) => {
               
               // Verificando que el nombre de la persona no sea el mismo que el user del que está invitando.
               if (nombrePersona !== username) {
