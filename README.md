@@ -19,7 +19,7 @@ const client = client({
     domain: "localhost",
     resource: "example",
     username: "user1",
-    password: "user1",
+    password: "example",
 });
 
 En el anterior código, se debe cambiar el username y el password por los que se deseen utilizar. Además, se debe cambiar el service y el domain por los que se deseen utilizar.

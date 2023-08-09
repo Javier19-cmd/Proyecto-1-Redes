@@ -75,8 +75,8 @@ function showMenu() {
       case "3":
         console.log("Saliendo...");
         rl.close(); // Cerrar la interfaz antes de salir del programa.
-        showMenu()
-        break;
+        // Cerrando el programa.
+        process.exit();
       default:
         console.log("Opción inválida.");
         showMenu();
