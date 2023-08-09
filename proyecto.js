@@ -134,7 +134,13 @@ async function login(username, password) {
 
     const soliAmi = [] // Lista para guardar las solicitudes de amistad.
 
+    const gChat = [] // Lista para guardar las invitaciones a chats grupales.
+
     xmpp.on('stanza', (stanza) => {
+
+      // Imprimiendo las stanzas que se reciben.
+      //console.log("Stanza recibida: ", stanza)
+
       // Verificar que sea un mensaje y que el tipo sea 'chat'
       if (stanza.is('message') && stanza.attrs.type === 'chat') {
         const from = stanza.attrs.from;
@@ -158,6 +164,37 @@ async function login(username, password) {
         // console.log("From: ", from)
         soliAmi.push(from);
         console.log("Solicitud de amistad recibida de: ", from)
+      }
+
+      // Verificando si la stanza es de tipo message el attrs.from tiene el @conference.alumchat.xyz, entonces dar la opción de ingresar o no al chat grupal.
+      if (stanza.is('message') && stanza.attrs.from.includes('@conference.alumchat.xyz')) {
+        
+        const chatG = stanza.attrs.from
+        
+        console.log(`Invitación para participar en el chat ${chatG}`)
+
+        // Guardando el nombre del chat en la lista.
+        gChat.push(chatG)
+
+        // // Preguntando a la persona si quiere entrar o no.
+        // rl.question("¿Deseas entrar al chat grupal en este momento? (s/n): ", async (answer) => {
+        //   const response = answer.toLowerCase();
+        //   if (response === 's') {
+            
+        //     // Extrayendo el nombre del chat, o sea lo que está antes del @.
+        //     const nombreChat = chatG.split('@')[0];
+        //     console.log("Nombre chat: ", nombreChat)
+
+        //     // Aceptar la solicitud de suscripción
+        //     joinGroupChat(nombreChat, username)
+            
+        //   } else {
+        //     // Rechazar la solicitud de suscripción
+        //     await xmpp.send(xml('presence', { to: chatG, type: 'unsubscribed' }));
+        //     console.log(`Solicitud de suscripción rechazada de ${chatG}`);
+        //     mainMenu()
+        //   }
+        // })
       }
 
     });
@@ -248,11 +285,11 @@ async function login(username, password) {
       }
     }
 
+    
     // Creando el cuarto.
     async function createGroupChat(roomJid, nickname) {
-      
-      roomJid = roomJid + "@conference.alumchat.xyz"
-      
+      roomJid = roomJid + "@conference.alumchat.xyz";
+
       try {
         await xmpp.send(xml('presence', { to: roomJid + '/' + nickname }));
         console.log('Joined group chat:', roomJid);
@@ -266,25 +303,43 @@ async function login(username, password) {
         rl.on('line', async (message) => {
           if (message.trim() === 'exit') {
             // Salir del chat al escribir "exit"
-            rl.close();
+            mainMenu()
+          } else if (message.trim() === 'invitar') {
+            rl.question('Ingresa el nombre de la persona a la que deseas invitar: ', async (nombrePersona) => {
+              
+              // Verificando que el nombre de la persona no sea el mismo que el user del que está invitando.
+              if (nombrePersona !== username) {
+                //console.log("Nombres no iguales.")
+                const jidInvitado = `${nombrePersona}@alumchat.xyz`;
+  
+                // Enviar una invitación al usuario
+                const invite = xml(
+                  'message',
+                  { to: roomJid },
+                  xml(
+                    'x',
+                    { xmlns: 'http://jabber.org/protocol/muc#user' },
+                    xml(
+                      'invite',
+                      { to: jidInvitado },
+                      xml('reason', {}, `Join our group: ${roomJid}`)
+                    )
+                  )
+                );
+                await xmpp.send(invite);
+              }
+              //console.log(`Invitación enviada a ${jidInvitado}`);
+            });
           } else {
-
-          // Mandando un mensaje al chat.
-          const messageT = xml(
-            "message",
-            { type: "groupchat", to: roomJid },
-            xml("body", {}, message),
-          );
-          await xmpp.send(messageT).catch((err)=>{console.warn(err)});
-          }})
-
-        // // Mandando un mensaje al chat.
-        // const messageT = xml(
-        //   "message",
-        //   { type: "groupchat", to: roomJid },
-        //   xml("body", {}, `Hello, this is a message from ${nickname}!`),
-        // );
-        // await xmpp.send(messageT).catch((err)=>{console.warn(err)});
+            // Mandando un mensaje al chat.
+            const messageT = xml(
+              "message",
+              { type: "groupchat", to: roomJid },
+              xml("body", {}, message),
+            );
+            await xmpp.send(messageT).catch((err) => { console.warn(err) });
+          }
+        });
 
         xmpp.on('stanza', async (stanza) => {
           if (stanza.is('message') && stanza.getChild('body')) {
@@ -314,64 +369,79 @@ async function login(username, password) {
     }
     
     async function joinGroupChat(roomJid, nickname) {
-      
-      console.log("Room JID: ", roomJid)
-
-      roomJid = roomJid + "@conference.alumchat.xyz"
-      
+      console.log("Room JID: ", roomJid);
+    
+      roomJid = roomJid + "@conference.alumchat.xyz";
+    
       try {
         await xmpp.send(xml('presence', { to: roomJid + '/' + nickname }));
         console.log('Joined group chat:', roomJid);
-
+    
         // Leyendo lo que el usuario ingrese desde el teclado.
         const rl = readline.createInterface({
           input: process.stdin,
           output: process.stdout
         });
-
+    
         rl.on('line', async (message) => {
           if (message.trim() === 'exit') {
             // Salir del chat al escribir "exit"
             rl.close();
+          } else if (message.trim() === 'invitar') {
+            rl.question('Ingresa el nombre de la persona a la que deseas invitar: ', async (nombrePersona) => {
+              const jidInvitado = `${nombrePersona}@alumchat.xyz`;
+    
+              // Enviar una invitación al usuario
+              const invite = xml(
+                'message',
+                { to: roomJid },
+                xml(
+                  'x',
+                  { xmlns: 'http://jabber.org/protocol/muc#user' },
+                  xml(
+                    'invite',
+                    { to: jidInvitado },
+                    xml('reason', {}, `Join our group: ${roomJid}`)
+                  )
+                )
+              );
+              await xmpp.send(invite);
+    
+              console.log(`Invitación enviada a ${jidInvitado}`);
+            });
           } else {
-
-          // Mandando un mensaje al chat.
-          const messageT = xml(
-            "message",
-            { type: "groupchat", to: roomJid },
-            xml("body", {}, message),
-          );
-          await xmpp.send(messageT).catch((err)=>{console.warn(err)});
-          }})
-
+            // Mandando un mensaje al chat.
+            const messageT = xml(
+              "message",
+              { type: "groupchat", to: roomJid },
+              xml("body", {}, message),
+            );
+            await xmpp.send(messageT).catch((err) => { console.warn(err) });
+          }
+        });
+    
         xmpp.on('stanza', async (stanza) => {
           if (stanza.is('message') && stanza.getChild('body')) {
-            //const { from, body } = stanza;
-
-            //console.log("Message: ", stanza)
-
+            const { from, body } = stanza;
+            //console.log('Message received from', from, ':', body);
+    
             // Verificando el tipo del body de la stanza.
             if (stanza.attrs.type === "groupchat") {
               // Obteniendo de quien se mandó el mensaje.
               const from = stanza.attrs.from;
               // Obteniendo el cuerpo del mensaje.
               const body = stanza.getChildText("body");
-
+    
               // console.log(`${from}: ${body}`);
-
+    
               // Si el from y el body no están vacíos, entonces se imprime el mensaje.
               if (from && body) {
                 console.log(`${from}: ${body}`);
               }
             }
-
-            //console.log('Message received from', from, ':', body);
           }
         });
-
-        //await xmpp.send(message).catch((err)=>{console.warn(err)});
-
-
+    
       } catch (error) {
         console.error('Error joining group chat:', error.toString());
       }
@@ -626,6 +696,7 @@ async function login(username, password) {
                 if (message.trim() === 'exit') {
                   // Salir del chat al escribir "exit"
                   rl.close();
+                  mainMenu()
                 } else {
                   // Enviando el mensaje.
                   const messageToSend = xml(
