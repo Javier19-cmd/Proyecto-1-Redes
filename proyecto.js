@@ -85,8 +85,14 @@ function showMenu() {
 }
 
 async function login(username, password) {
-  // Implementa aquí la lógica para iniciar sesión.
-  // Por ejemplo, puedes pedir al usuario su nombre de usuario y contraseña y validarlas.
+  
+  // Seteando status online.
+  const status = xml(
+    'presence',
+    {},
+    xml('show', {}, 'chat'),
+    xml('status', {}, 'Online')
+  );
 
   //console.log("Usuario: ", username)
   //console.log("Contraseña:", password)
@@ -97,6 +103,10 @@ async function login(username, password) {
     username: username,
     password: password,
     terminal: true,
+    tls: {
+      // Opción para desactivar la verificación de certificados
+      rejectUnauthorized: false,
+    },
   });
 
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -490,51 +500,63 @@ async function login(username, password) {
         switch (answer) {
           case '1':
             console.log('Mostrando todos los usuarios y su estado...');
-          
+
             // Solicitar el roster al servidor
             const rosterRequest = xml(
               'iq',
               { type: 'get', id: 'roster' },
               xml('query', { xmlns: 'jabber:iq:roster' })
             );
-          
+
             // Enviar la solicitud de roster al servidor
             xmpp.send(rosterRequest).then(() => {
               console.log('Solicitud de roster enviada al servidor.');
             }).catch((err) => {
               console.error('Error al enviar la solicitud de roster:', err);
             });
-          
+
             // Evento para recibir la respuesta del roster del servidor
             xmpp.on('stanza', (stanza) => {
               if (stanza.is('iq') && stanza.attrs.type === 'result') {
                 const query = stanza.getChild('query', 'jabber:iq:roster');
                 const contacts = query.getChildren('item');
-          
+
+                // Imprimiendo la lista de contactos.
+
                 console.log('Lista de contactos:');
                 contacts.forEach((contact) => {
                   const jid = contact.attrs.jid;
                   const name = contact.attrs.name || jid;
                   const subscription = contact.attrs.subscription;
-          
-                  // Obtener el estado de presencia del contacto (si está disponible)
-                  const presence = xmpp.presences && xmpp.presences[jid];
-                  const status = presence && presence.status ? presence.status : 'Offline';
 
-                  console.log(`- JID: ${jid}, Nombre: ${name}, Suscripción: ${subscription}, Estado: ${status}`);
+                  // Leyendo lo de presencia acá.
+
+                  console.log(`- JID: ${jid}, Nombre: ${name}, Suscripción: ${subscription}`);
                 });
-          
+
+                // Escuchar presencias de los contactos
                 xmpp.on('presence', (presence) => {
                   const from = presence.attrs.from;
-                  const show = presence.getChildText('show');
-                  const status = presence.getChildText('status');
-          
-                  console.log(`Presencia recibida de ${from}: show=${show}, status=${status}`);
+                  const show = presence.getChildText('show') || 'available';
+                  const status = presence.getChildText('status') || 'Online';
+
+                  // Buscar el contacto correspondiente en la lista
+                  const contact = contacts.find((c) => c.attrs.jid === from);
+                  if (contact) {
+                    const jid = contact.attrs.jid;
+                    const name = contact.attrs.name || jid;
+                    const subscription = contact.attrs.subscription;
+
+                    console.log(`Presencia recibida de ${jid} (${name}): show=${show}, status=${status}, suscripción=${subscription}`);
+                  } else {
+                    console.log(`Presencia recibida de ${from}: show=${show}, status=${status}`);
+                  }
                 });
+
                 // Evento para recibir las presencias de los contactos
               }
             });
-          
+
             mainMenu();
             break;         
         
@@ -778,33 +800,14 @@ async function login(username, password) {
             break;          
           // Enviando/recibiendo notificaciones (mensajes de chat)
           case "7":
-            console.log("Enviando/recibiendo notificaciones (mensajes de chat)...");
-            rl.question("JID del contacto al que deseas enviar una notificación: ", (contactJID) => {
-              rl.question("Mensaje: ", async (message) => {
-
-                const newC = contactJID + "@alumchat.xyz"
-
-                // Crear un mensaje XMPP de tipo "chat" para enviar la notificación
-                const chatMessage = xml(
-                  "message",
-                  { to: newC, type: "chat" },
-                  xml("body", {}, message)
-                );
-
-                try {
-                  // Enviar el mensaje XMPP al contacto
-                  await xmpp.send(chatMessage);
-                  console.log("Notificación enviada exitosamente.");
-                } catch (err) {
-                  console.error("Error al enviar la notificación:", err);
-                }
-
-                mainMenu(); // Vuelve al menú principal después de enviar la notificación
-              });
-            });
+            
+            console.log("Leyendo las notificaciones")
 
             // Evento para recibir notificaciones (mensajes de chat)
             xmpp.on("stanza", (stanza) => {
+
+              console.log(stanza)
+
               if (stanza.is("message") && stanza.attrs.type === "chat") {
                 const from = stanza.attrs.from;
                 const body = stanza.getChildText("body");
