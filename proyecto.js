@@ -5,6 +5,7 @@ const net = require("net");
 const cliente = new net.Socket();
 const fetch = require('node-fetch');
 const { join } = require("path");
+const EventEmitter = require('events');
 // const muc = require('node-xmpp-muc');
 
 // Password: 1234
@@ -121,6 +122,10 @@ async function login(username, password) {
     // Makes itself available
     await xmpp.send(xml("presence", { type: "available" }))
 
+    // Devolviendo una respuesta del servidor cuando se envió el presence.
+    console.log(`Mensaje de presencia enviado a ${username}: ${status.toString()}`);
+
+
     // console.log("Inició sesión con este address: ", address)
 
     /**
@@ -142,6 +147,8 @@ async function login(username, password) {
       
     const messages = []; // Lista para almacenar todos los mensajes recibidos
 
+    const messagesDictionary = {}
+
     const soliAmi = [] // Lista para guardar las solicitudes de amistad.
 
     const gChat = [] // Lista para guardar las invitaciones a chats grupales.
@@ -162,9 +169,11 @@ async function login(username, password) {
           // Imprimir el último mensaje recibido inmediatamente después de recibirlo
           printLastMessage();
 
+          //mainMenu()
+
           // Llamando a la función opciones para que no se pierda el hilo de opciones.
-          opciones();
-          console.log("¿Qué opción deseas?")
+          // opciones();
+          // console.log("¿Qué opción deseas?")
         }
       }
 
@@ -178,6 +187,8 @@ async function login(username, password) {
 
       // Verificando si la stanza es de tipo message el attrs.from tiene el @conference.alumchat.xyz, entonces dar la opción de ingresar o no al chat grupal.
       if (stanza.is('message') && stanza.attrs.from.includes('@conference.alumchat.xyz')) {
+
+        //console.log("Invitación: ", stanza.attrs)
         
         const chatG = stanza.attrs.from
 
@@ -186,16 +197,13 @@ async function login(username, password) {
         // Quitando al to todo lo que está después del @
         const usernames = to.split('@')[0];
         
-        console.log("To: ", usernames, "username: ", username)
+        //console.log("To: ", usernames, "username: ", username)
 
-        if (usernames !== username){
-          // Verificando que el to no sea el mismo del username.
-          
-          console.log(`Invitación para participar en el chat ${chatG}`)
-  
-          // Guardando el nombre del chat en la lista.
-          gChat.push(chatG)
+        gChat.push(chatG)
 
+        // Si el to no tiene una diagonal, entonces se imprime la invitación.
+        if (!to.includes('/')) {
+          console.log("Invitación a chat grupal recibida de: ", chatG)
         }
 
 
@@ -229,8 +237,6 @@ async function login(username, password) {
         if (lastMessage.length > MAX_MESSAGE_LENGTH) {
           const truncatedMessage = lastMessage.substring(0, MAX_MESSAGE_LENGTH) + '...';
           console.log(`Último mensaje recibido: ${truncatedMessage}`);
-        } else {
-          console.log(`Último mensaje recibido: ${lastMessage}`);
         }
       } else {
         console.log("No se han recibido mensajes.");
@@ -334,6 +340,8 @@ async function login(username, password) {
               if (nombrePersona !== username) {
                 //console.log("Nombres no iguales.")
                 const jidInvitado = `${nombrePersona}@alumchat.xyz`;
+
+                console.log("Nombre: ", jidInvitado)
   
                 // Enviar una invitación al usuario
                 const invite = xml(
@@ -409,10 +417,12 @@ async function login(username, password) {
         rl.on('line', async (message) => {
           if (message.trim() === 'exit') {
             // Salir del chat al escribir "exit"
-            rl.close();
+            mainMenu()
           } else if (message.trim() === 'invitar') {
             rl.question('Ingresa el nombre de la persona a la que deseas invitar: ', async (nombrePersona) => {
               const jidInvitado = `${nombrePersona}@alumchat.xyz`;
+
+              console.log("Nombre: ", jidInvitado)
     
               // Enviar una invitación al usuario
               const invite = xml(
@@ -483,7 +493,7 @@ async function login(username, password) {
         console.log("4. Comunicación 1 a 1 con cualquier usuario/contacto");
         console.log("5. Participar en conversaciones grupales");
         console.log("6. Definir un mensaje de presencia");
-        console.log("7. Enviar notificaciones");
+        console.log("7. Centro de notificaciones");
         console.log("8. Enviar/recibir archivos");
         console.log("9. Eliminar cuenta");
         console.log("10. Cerrar sesión");
@@ -510,26 +520,23 @@ async function login(username, password) {
 
             // Enviar la solicitud de roster al servidor
             xmpp.send(rosterRequest).then(() => {
-              console.log('Solicitud de roster enviada al servidor.');
+              console.log('');
             }).catch((err) => {
               console.error('Error al enviar la solicitud de roster:', err);
             });
 
-            // Evento para recibir la respuesta del roster del servidor
+            // Manejar la respuesta del roster
             xmpp.on('stanza', (stanza) => {
               if (stanza.is('iq') && stanza.attrs.type === 'result') {
                 const query = stanza.getChild('query', 'jabber:iq:roster');
                 const contacts = query.getChildren('item');
 
                 // Imprimiendo la lista de contactos.
-
                 console.log('Lista de contactos:');
                 contacts.forEach((contact) => {
                   const jid = contact.attrs.jid;
-                  const name = contact.attrs.name || jid;
+                  const name = contact.attrs.name || jid.split('@')[0];
                   const subscription = contact.attrs.subscription;
-
-                  // Leyendo lo de presencia acá.
 
                   console.log(`- JID: ${jid}, Nombre: ${name}, Suscripción: ${subscription}`);
                 });
@@ -553,12 +560,22 @@ async function login(username, password) {
                   }
                 });
 
-                // Evento para recibir las presencias de los contactos
+                // Ahora puedes solicitar la presencia de los contactos una vez que tengas la lista de contactos
+                contacts.forEach((contact) => {
+                  const jid = contact.attrs.jid;
+                  // Solicitar la presencia de cada contacto
+                  const presenceRequest = xml('presence', { to: jid });
+                  xmpp.send(presenceRequest).catch((err) => {
+                    console.error('Error al solicitar la presencia:', err);
+                  });
+                });
+
+                mainMenu();
               }
             });
 
-            mainMenu();
-            break;         
+            break;
+
         
           // Agregar un usuario a los contactos
           case "2":
@@ -567,6 +584,7 @@ async function login(username, password) {
             // 2. Aceptar solicitudes.
             console.log("1. Agregar un usuario a mis contactos");
             console.log("2. Aceptar solicitudes");
+            console.log("3. Regresar")
 
             rl.question("¿Qué opción deseas?: ", async (answer) => {
               switch (answer) {
@@ -654,6 +672,10 @@ async function login(username, password) {
                     )};
                   });
                   break;
+                case "3":
+                  console.log("Regresando al menú principal...");
+                  mainMenu();
+                  break;
                 default:
                   console.log("Opción inválida.")
                   mainMenu(); // Vuelve al menú principal en caso de opción inválida
@@ -684,7 +706,7 @@ async function login(username, password) {
                     console.log(`El contacto ${contactJID} no está en tu lista de contactos.`);
                   }
           
-                  mainMenu(); // Vuelve al menú principal después de completar la opción
+                  //mainMenu(); // Vuelve al menú principal después de completar la opción
                 }
               });
           
@@ -703,52 +725,71 @@ async function login(username, password) {
               });
             });
             break;
-            
           case "4":
             console.log("Comunicación 1 a 1 con cualquier usuario/contacto...");
-          
-            // Función para manejar los mensajes entrantes
-            function handleIncomingMessages() {
-              xmpp.on('stanza', (stanza) => {
-                if (stanza.is('message') && stanza.attrs.type === 'chat') {
-                  const from = stanza.attrs.from;
-                  const body = stanza.getChildText('body');
-                  if (body !== null) {
-                    console.log(`${from}: ${body}`);
+            
+            
+            // Pidiendo el usuario con el que se quiere chatear.
+            rl.question("JID del usuario con el que deseas chatear: ", (userJID) => {
+              const newC = userJID + "@alumchat.xyz";
+              chatWithUser(newC);
+            });
+            
+            async function chatWithUser(userJID) {
+              console.log(`Iniciando chat con: ${userJID}`);
+            
+              // Función para manejar los mensajes entrantes del usuario
+              function handleIncomingMessages() {
+                xmpp.on('stanza', (stanza) => {
+                  if (stanza.is('message') && stanza.attrs.type === 'chat') {
+                    const from = stanza.attrs.from;
+                    const body = stanza.getChildText('body');
+
+                    console.log(body)
+
+                    if (body !== null || body !== "") {
+                      console.log(`${from}: ${body}`);
+                    }
                   }
-                }
+                });
+              }
+            
+              // Comenzar a escuchar mensajes del usuario
+              handleIncomingMessages();
+            
+              // Configurar el manejo de entrada de mensajes desde la consola
+              const rl = readline.createInterface({
+                input: process.stdin,
+                output: process.stdout,
               });
-            }
-          
-            rl.question("¿Con quién deseas comunicarte?: ", (user) => {
-              const fullUser = user + "@alumchat.xyz";
-              handleIncomingMessages(); // Comenzar a escuchar los mensajes entrantes
-              // console.log("\n")
-              // rl.setPrompt('Tu: ');
-              // rl.prompt();
-          
+            
+              rl.setPrompt('Tú: ');
+              rl.prompt();
+            
               rl.on('line', async (message) => {
                 if (message.trim() === 'exit') {
                   // Salir del chat al escribir "exit"
                   rl.close();
-                  mainMenu()
+                  mainMenu();
                 } else {
-                  // Enviando el mensaje.
+                  // Enviando el mensaje al usuario destino
                   const messageToSend = xml(
-                    "message",
-                    { type: "chat", to: fullUser }, // Usamos el usuario completo con el dominio
-                    xml("body", {}, message),
+                    'message',
+                    { type: 'chat', to: userJID }, // Usamos el JID del usuario destino
+                    xml('body', {}, message),
                   );
                   await xmpp.send(messageToSend);
                 }
               });
-          
+            
               rl.on('close', () => {
                 console.log('Chat finalizado.');
-                mainMenu(); // Vuelve al menú principal después de completar la opción
+                mainMenu(); // Vuelve al menú principal después de completar la conversación
               });
-            });
+            }
+            
             break;
+            
                     
           case "5":
             console.log("Participando en conversaciones grupales...");
@@ -803,17 +844,63 @@ async function login(username, password) {
             
             console.log("Leyendo las notificaciones")
 
-            // Evento para recibir notificaciones (mensajes de chat)
-            xmpp.on("stanza", (stanza) => {
 
-              console.log(stanza)
 
-              if (stanza.is("message") && stanza.attrs.type === "chat") {
-                const from = stanza.attrs.from;
-                const body = stanza.getChildText("body");
-                console.log(`Notificación recibida de ${from}: ${body}`);
-              }
-            });
+            console.log("1. Ver mensajes recibidos")
+            console.log("2. Ver solicitudes de amistad")
+
+            rl.question("¿Qué opción deseas?: ", async (answer) => {
+              switch (answer) {
+                case '1':
+                  // Imprimir los mensajes junto con índices para facilitar la elección del usuario
+                  messages.forEach((message, index) => {
+                    console.log(`${index + 1}: ${message}`);
+                  });
+                
+                  // Preguntar al usuario a cuál mensaje desea responder
+                  rl.question("¿A cuál mensaje deseas responder? (Ingresa el número): ", (response) => {
+                    const messageIndex = parseInt(response) - 1;
+                    if (messageIndex >= 0 && messageIndex < messages.length) {
+                      // Mensaje válido seleccionado, capturar la respuesta del usuario
+                      rl.question(`Respuesta a "${messages[messageIndex]}": `, async (reply) => {
+                        
+                        // Obteniendo lo que está antes del @.
+                        const user = messages[messageIndex].split('@')[0];
+
+                        // Agregando el @alumchat.xyz
+                        const fullUser = user + "@alumchat.xyz";
+
+                        console.log("Full user: ", fullUser)
+                        
+                        const messageToSend = xml(
+                          "message",
+                          { type: "chat", to: fullUser }, // Usamos el usuario completo con el dominio
+                          xml("body", {}, reply),
+                        );
+                        await xmpp.send(messageToSend);
+                        console.log(`Respuesta enviada a ${fullUser}`);
+                        mainMenu(); // Volver al menú principal
+                      });
+                    } else {
+                      console.log("Índice de mensaje inválido.");
+                      mainMenu(); // Volver al menú principal
+                    }
+                  });
+                  break;                
+                case "2":
+
+                  /**
+                   * Imprimiendo las invitaciones de la siguiente manera: Invitación a chat grupal recibida de:  holas@conference.alumchat.xyz
+                   */
+                  gChat.forEach((chat) => {
+                    console.log("Invitación a chat grupal recibida de: ", chat)
+                  })
+                  break
+                default:
+                  console.log("Opción inválida.")
+                  mainMenu(); // Vuelve al menú principal en caso de opción inválida
+              }})
+            
             break;
 
           case "8":
