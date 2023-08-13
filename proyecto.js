@@ -162,19 +162,40 @@ async function login(username, password) {
       if (stanza.is('message') && stanza.attrs.type === 'chat') {
         const from = stanza.attrs.from;
         const body = stanza.getChildText('body');
-        if (body !== null) {
-          // Almacenar el mensaje en la lista messages
-          messages.push(`${from}: ${body}`);
 
-          // Imprimir el último mensaje recibido inmediatamente después de recibirlo
-          printLastMessage();
+        //console.log("Body: ", body)
 
-          //mainMenu()
+      if (body) {
+        // console.log("Body: ", body);
 
-          // Llamando a la función opciones para que no se pierda el hilo de opciones.
-          // opciones();
-          // console.log("¿Qué opción deseas?")
+        if (body.length > MAX_MESSAGE_LENGTH) {
+          const truncatedBody = body.substring(0, MAX_MESSAGE_LENGTH) + '...';
+          console.log(`${from}: ${truncatedBody}`);
+        } else {
+          console.log(`${from}: ${body}`);
         }
+      }
+        
+        // // Imprimir el último mensaje recibido inmediatamente después de recibirlo
+        // printLastMessage();
+
+
+        //console.log(`${from}: ${body}`)
+
+
+        // if (body !== null) {
+        //   // Almacenar el mensaje en la lista messages
+        //   messages.push(`${from}: ${body}`);
+
+        //   // Imprimir el último mensaje recibido inmediatamente después de recibirlo
+        //   printLastMessage();
+
+        //   //mainMenu()
+
+        //   // Llamando a la función opciones para que no se pierda el hilo de opciones.
+        //   // opciones();
+        //   // console.log("¿Qué opción deseas?")
+        // }
       }
 
       // Verificando si la stanza es solicitud de amistad.
