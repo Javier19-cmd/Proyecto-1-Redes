@@ -762,13 +762,16 @@ async function login(username, password) {
               // Función para manejar los mensajes entrantes del usuario
               function handleIncomingMessages() {
                 xmpp.on('stanza', (stanza) => {
+
+                  console.log("Stanza: ", stanza)
+
                   if (stanza.is('message') && stanza.attrs.type === 'chat') {
                     const from = stanza.attrs.from;
                     const body = stanza.getChildText('body');
 
                     console.log(body)
 
-                    if (body !== null || body !== "") {
+                    if (body){
                       console.log(`${from}: ${body}`);
                     }
                   }
