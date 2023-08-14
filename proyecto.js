@@ -5,7 +5,9 @@ const net = require("net");
 const cliente = new net.Socket();
 const fetch = require('node-fetch');
 const { join } = require("path");
+const fs = require('fs')
 const EventEmitter = require('events');
+const request = require('request')
 // const muc = require('node-xmpp-muc');
 
 // Password: 1234
@@ -91,8 +93,7 @@ async function login(username, password) {
   const status = xml(
     'presence',
     {},
-    xml('show', {}, 'chat'),
-    xml('status', {}, 'Online')
+    xml('status', {}, 'Available')
   );
 
   //console.log("Usuario: ", username)
@@ -119,8 +120,12 @@ async function login(username, password) {
   });
 
   xmpp.on("online", async (address) => {
+
+
+    // console.log("Online como: ", address)
+
     // Makes itself available
-    await xmpp.send(xml("presence", { type: "available" }))
+    xmpp.send(xml("presence", { type: "online" }))
 
     // Devolviendo una respuesta del servidor cuando se envió el presence.
     console.log(`Mensaje de presencia enviado a ${username}: ${status.toString()}`);
@@ -500,6 +505,40 @@ async function login(username, password) {
         console.error('Error joining group chat:', error.toString());
       }
     }
+
+    async function enviarArchivo(contactJID, filePath) {
+      const newC = contactJID + '@alumchat.xyz';
+
+      // Leer el archivo para obtener su nombre y tamaño
+      const fileStats = fs.statSync(filePath);
+      const fileName = filePath.split('/').pop(); // Obtener el nombre del archivo desde la ruta
+      const fileSize = fileStats.size;
+
+      const xmppDomain = "alumchat.xyz"
+
+      // Crear un enlace de descarga para el archivo
+      const fileURL = `http://${xmppDomain}:5222/files/${fileName}`;
+
+      // Crear el elemento de "Out of Band Data" con los metadatos del archivo
+      const oobData = xml(
+        'x',
+        { xmlns: 'jabber:x:oob' },
+        xml('url', {}, fileURL),
+        xml('desc', {}, `Archivo: ${fileName}, Tamaño: ${fileSize} bytes`)
+      );
+
+      // Crear el mensaje con el archivo adjunto
+      const message = xml(
+        'message',
+        { to: newC, type: 'chat' },
+        xml('body', {}, `${fileURL}`),
+        oobData
+      );
+
+      // Enviar el mensaje al contacto
+      await xmpp.send(message);
+      console.log('Archivo enviado con éxito.');
+    }
     
 
     
@@ -541,7 +580,7 @@ async function login(username, password) {
 
             // Enviar la solicitud de roster al servidor
             xmpp.send(rosterRequest).then(() => {
-              console.log('');
+              // Imprimiendo la respuesta.
             }).catch((err) => {
               console.error('Error al enviar la solicitud de roster:', err);
             });
@@ -560,44 +599,37 @@ async function login(username, password) {
                   const subscription = contact.attrs.subscription;
 
                   console.log(`- JID: ${jid}, Nombre: ${name}, Suscripción: ${subscription}`);
-                });
-
-                // Escuchar presencias de los contactos
-                xmpp.on('presence', (presence) => {
-                  const from = presence.attrs.from;
-                  const show = presence.getChildText('show') || 'available';
-                  const status = presence.getChildText('status') || 'Online';
-
-                  // Buscar el contacto correspondiente en la lista
-                  const contact = contacts.find((c) => c.attrs.jid === from);
-                  if (contact) {
-                    const jid = contact.attrs.jid;
-                    const name = contact.attrs.name || jid;
-                    const subscription = contact.attrs.subscription;
-
-                    console.log(`Presencia recibida de ${jid} (${name}): show=${show}, status=${status}, suscripción=${subscription}`);
-                  } else {
-                    console.log(`Presencia recibida de ${from}: show=${show}, status=${status}`);
-                  }
-                });
-
-                // Ahora puedes solicitar la presencia de los contactos una vez que tengas la lista de contactos
-                contacts.forEach((contact) => {
-                  const jid = contact.attrs.jid;
+                  
                   // Solicitar la presencia de cada contacto
                   const presenceRequest = xml('presence', { to: jid });
                   xmpp.send(presenceRequest).catch((err) => {
                     console.error('Error al solicitar la presencia:', err);
                   });
+
+                  // Escuchar la respuesta de presencia de cada contacto
+                  xmpp.on('stanza', (presenceStanza) => {
+                    if (presenceStanza.is('presence') && presenceStanza.attrs.from === jid) {
+                      const showElement = presenceStanza.getChild('show');
+                      const statusElement = presenceStanza.getChild('status');
+
+                      console.log("Stanza: ", presenceStanza)
+
+                      // Obtener el contenido de los elementos "show" y "status" si están presentes
+                      const show = showElement ? showElement.text() : 'available';
+                      const status = statusElement ? statusElement.text() : 'Online';
+
+                      console.log(`Estado de ${jid}: ${status}, Show: ${show}`);
+                    }
+                  });
+
                 });
 
-                mainMenu();
               }
             });
-
+            
+            mainMenu();
             break;
 
-        
           // Agregar un usuario a los contactos
           case "2":
             // Creando dos opciones.
@@ -763,13 +795,13 @@ async function login(username, password) {
               function handleIncomingMessages() {
                 xmpp.on('stanza', (stanza) => {
 
-                  console.log("Stanza: ", stanza)
+                  // console.log("Stanza: ", stanza)
 
                   if (stanza.is('message') && stanza.attrs.type === 'chat') {
                     const from = stanza.attrs.from;
                     const body = stanza.getChildText('body');
 
-                    console.log(body)
+                    //console.log(body)
 
                     if (body){
                       console.log(`${from}: ${body}`);
@@ -793,9 +825,13 @@ async function login(username, password) {
               rl.on('line', async (message) => {
                 if (message.trim() === 'exit') {
                   // Salir del chat al escribir "exit"
-                  rl.close();
                   mainMenu();
-                } else {
+                } else if (message.trim() === 'archivo'){
+                  rl.question("Ingresa la ruta del archivo que deseas enviar: ", async (filePath) => {
+                    await enviarArchivo(userJID, filePath);
+                  });
+                } 
+                else {
                   // Enviando el mensaje al usuario destino
                   const messageToSend = xml(
                     'message',
@@ -939,6 +975,8 @@ async function login(username, password) {
               const fileName = filePath.split('/').pop(); // Obtener el nombre del archivo desde la ruta
               const fileSize = fileStats.size;
 
+              const xmppDomain = "alumchat.xyz"
+
               // Crear un enlace de descarga para el archivo
               const fileURL = `http://${xmppDomain}:5222/files/${fileName}`;
 
@@ -959,7 +997,7 @@ async function login(username, password) {
               );
 
               // Enviar el mensaje al contacto
-              await xmppClient.send(message);
+              await xmpp.send(message);
               console.log('Archivo enviado con éxito.');
             }
 
