@@ -740,6 +740,9 @@ async function login(username, password) {
             console.log("Mostrando detalles de un contacto...");
             rl.question("JID del contacto que deseas ver detalles: ", (contactJID) => {
               const newC = contactJID + "@alumchat.xyz";
+
+              const presenceRequest = xml('presence', { to: contactJID });
+              xmpp.send(presenceRequest);
           
               // Evento para recibir la respuesta del roster del servidor
               xmpp.on('stanza', (stanza) => {
@@ -1033,7 +1036,7 @@ async function login(username, password) {
 
             // Enviando la stanza al servidor XMPP.
             xmpp.send(stanza);
-            process.exit();
+            showMenu()
     
           case "10":
           

@@ -153,3 +153,131 @@ function inicioSesion(jid, password) {
                 console.log(`- ${friendRequest}`);
               });
             }
+
+---------------------------------------------------------------------------------------------
+async getContacts() {
+    return new Promise((resolve, reject) => {
+      if (!this.xmpp) {
+        reject(new Error("Error en conexion, intente de nuevo."));
+      }
+      
+      // creando la stanza para obtener los contactos
+      const rosterStanza = xml(
+        'iq',
+        { type: 'get', id: 'roster' },
+        xml('query', { xmlns: 'jabber:iq:roster' })
+      );
+        
+      // Enviar la stanza al servidor
+      this.xmpp.send(rosterStanza).catch((err) => {
+        reject(new Error('Error al enviar la solicitud de roster.'));
+      });
+  
+      // Evento para recibir la respuesta del roster del servidor
+      this.xmpp.on('stanza', (stanza) => {
+        if (stanza.is('iq') && stanza.attrs.type === 'result') {
+          const query = stanza.getChild('query', 'jabber:iq:roster');
+          if (query) {
+            const contacts = query.getChildren('item');
+  
+            let contactList = [];
+            contacts.forEach((contact) => {
+              const jid = contact.attrs.jid;
+              const name = contact.attrs.name || jid;
+              const subscription = contact.attrs.subscription;
+  
+              // Obtener el estado de presencia del contacto (si está disponible)
+              const presence = this.xmpp.presences && this.xmpp.presences[jid];
+              const status = presence && presence.status ? presence.status : 'Offline';
+  
+              contactList.push({jid, name, subscription, status});
+            });
+  
+            resolve(contactList);
+          }
+        }
+      });
+    });
+  }  
+
+  /**
+   * getPresence: obtiene el estado de presencia de un contacto.
+   * @param {string} jid 
+   * @returns show, status
+   */
+  async getPresence(jid, timeout = 2000, delay = 500) {
+    return new Promise((resolve, reject) => {
+      if (!this.xmpp) {
+        reject(new Error("Error en conexion, intente de nuevo."));
+      }
+      
+      // creando la stanza para obtener el estado de presencia
+      const probeStanza = xml(
+        "presence",
+        { type: "probe", to: jid }
+      );
+        
+      // Enviar la stanza al servidor
+      this.xmpp
+        .send(probeStanza)
+        .then(() => {
+          // console.log("Presence probe sent successfully");
+        })
+        .catch((err) => {
+          console.error("Error sending presence probe:", err);
+          reject(new Error("Error al enviar la solicitud de presencia."));
+        });
+  
+      const timeoutId = setTimeout(() => {
+        reject(new Error("Timeout al recibir la presencia del servidor."));
+      }, timeout);
+  
+      let presence = null;
+      
+      // Evento para recibir la respuesta del servidor y llenar datos de contacto
+      this.xmpp.on("stanza", (stanza) => {
+        if (stanza.is("presence")) {
+          // console.log("Received presence stanza:", stanza.toString());
+          const from = stanza.attrs.from;
+          const fromJid = from.split("/")[0];
+          if (fromJid === jid) {
+            clearTimeout(timeoutId);
+            if (stanza.attrs.type === "unavailable") {
+              presence = { show: "unavailable", status: null };
+            } else {
+              let show = stanza.getChildText("show");
+              const status = stanza.getChildText("status");
+  
+              // ver si hay un estado de presencia
+              if (show || status) {
+                // console.log("show:", show)
+                // if para cambiar el estado de presencia a un string
+                if(show === null || show === undefined || show === "") {
+                  show = "Available";
+                }
+                else if(show === "away"){
+                  show = "Away";
+                } else if(show === "xa"){
+                  show = "Not Available";
+                } else if(show === "dnd"){
+                  show = "Busy";
+                } else if (show === "unavailable") {
+                  show = "Offline";
+                }
+                presence = { show, status };
+              }
+            }
+          }
+        } else if (stanza.is("iq") && stanza.attrs.type === "error") {
+          console.log("Received error stanza:", stanza.toString());
+          clearTimeout(timeoutId);
+          reject(new Error("Error al recibir la presencia del servidor."));
+        }
+      });
+      
+      // si no se recibe respuesta del servidor, se envia un objeto vacio
+      setTimeout(() => {
+        resolve(presence || { show: "Available", status: null });
+      }, delay);
+    });
+  }
