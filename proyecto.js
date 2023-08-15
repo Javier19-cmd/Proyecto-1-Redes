@@ -767,6 +767,8 @@ async function login(username, password) {
                 console.error('Error al enviar la solicitud de roster:', err);
               });
             });
+
+            mainMenu()
             break;
           case "4":
             console.log("Comunicación 1 a 1 con cualquier usuario/contacto...");
