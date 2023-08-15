@@ -89,13 +89,6 @@ function showMenu() {
 
 async function login(username, password) {
   
-  // Seteando status online.
-  const status = xml(
-    'presence',
-    {},
-    xml('status', {}, 'Available')
-  );
-
   //console.log("Usuario: ", username)
   //console.log("Contraseña:", password)
 
@@ -124,11 +117,9 @@ async function login(username, password) {
 
     // console.log("Online como: ", address)
 
-    // Makes itself available
-    xmpp.send(xml("presence", { type: "online" }))
-
-    // Devolviendo una respuesta del servidor cuando se envió el presence.
-    console.log(`Mensaje de presencia enviado a ${username}: ${status.toString()}`);
+    // Online.
+    const presence = xml('presence', { type: 'available' });
+    xmpp.send(presence);
 
 
     // console.log("Inició sesión con este address: ", address)
@@ -600,30 +591,19 @@ async function login(username, password) {
 
                   console.log(`- JID: ${jid}, Nombre: ${name}, Suscripción: ${subscription}`);
                   
-                  // Solicitar la presencia de cada contacto
-                  const presenceRequest = xml('presence', { to: jid });
-                  xmpp.send(presenceRequest).catch((err) => {
-                    console.error('Error al solicitar la presencia:', err);
-                  });
-
-                  // Escuchar la respuesta de presencia de cada contacto
-                  xmpp.on('stanza', (presenceStanza) => {
-                    if (presenceStanza.is('presence') && presenceStanza.attrs.from === jid) {
-                      const showElement = presenceStanza.getChild('show');
-                      const statusElement = presenceStanza.getChild('status');
-
-                      console.log("Stanza: ", presenceStanza)
-
-                      // Obtener el contenido de los elementos "show" y "status" si están presentes
-                      const show = showElement ? showElement.text() : 'available';
-                      const status = statusElement ? statusElement.text() : 'Online';
-
-                      console.log(`Estado de ${jid}: ${status}, Show: ${show}`);
-                    }
-                  });
-
+                })
+                
+                xmpp.on('stanza', stanza => {
+  
+                  // console.log(stanza)
+  
+                  if (stanza.is('presence')) {
+                    const from = stanza.attrs.from;
+                    const type = stanza.attrs.type;
+                    const show = stanza.getChildText('show');
+                    console.log(`Presence from ${from}: type=${type}, show=${show}`);
+                  }
                 });
-
               }
             });
             
