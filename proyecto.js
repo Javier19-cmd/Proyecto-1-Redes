@@ -601,7 +601,14 @@ async function login(username, password) {
                     const from = stanza.attrs.from;
                     const type = stanza.attrs.type;
                     const show = stanza.getChildText('show');
-                    console.log(`Presence from ${from}: type=${type}, show=${show}`);
+
+                    // Si el tipo es undefined, entonces es online.
+                    if (type === undefined) {
+                      console.log(`Presence from ${from}: type=online`);
+                    }else{
+                      console.log(`Presence from ${from}: type=${type}, show=${show}`);
+                    }
+
                   }
                 });
               }
