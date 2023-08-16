@@ -20,7 +20,7 @@ Como primer paso, se debe crear un ambiente de javascript de la siguiente manera
 
 El segundo paso es dar enter a todo lo que se pregunta y, de preferencia, se debe colocar el link al repositorio cuando lo pregunte el init.
 
-El tercer paso es instalar la librería node-xmpp-client, que se hace de la siguiente forma: npm install node-xmpp.
+El tercer paso es instalar la librería node-xmpp-client, que se hace de la siguiente forma: $ npm install node-xmpp.
 
 Luego de hacer los pasos anteriores, se debe crear un archivo con extensión js e importar de la siguiente forma: 
     - const { client, xml, jid } = require("@xmpp/client");
@@ -159,3 +159,8 @@ Las tecnologías utilizadas en el presente proyecto fueron las siguientes:
 
 1. NodeJS, el cual nos provee el entorno de programación de javascript.
 2. XMPP, que nos provee todo el protocolo para la mensajería entre personas mediante cualquier interfaz.
+
+# Autor
+Javier Sebastián Valle Balsells
+Carnet 20159
+Redes
