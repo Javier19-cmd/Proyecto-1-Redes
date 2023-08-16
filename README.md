@@ -1,34 +1,32 @@
-# Proyecto 1: Chat con el protocolo de XMPP
+# Project 1: Chat with XMPP Protocol
 
-El presente proyecto consiste en un chat tipo WhatsApp, en el cual se puede hacer la comunicación 1 a 1 con otros usuarios o bien en chat grupal. Este proyecto utiliza el proctocolo XMPP más 
-actualizado de 2023. Asimismo, para el desarrollo del presente proyecto se utilizó la terminal y el lenguaje de programación javascript. Es importante mencionar que las librerías utilizadas para 
-el desarrollo del presente proyecto fueron: net y @xmpp/client.
+This project consists of a WhatsApp-style chat application that enables 1-to-1 communication with other users as well as group chat functionality. The project utilizes the updated XMPP protocol
+of 2023. The development is done using the JavaScript programming language and terminal environment. Notably, the libraries employed for this project include net and @xmpp/client.
 
-# Requisitos para el entorno de desarrollo del proyecto
+# Prerequisites for Project Development Environment
 
-Para este proyecto, lo principal es tener instalado NodeJS, Git y un IDE para programar.
+For this project, it's essential to have NodeJS, Git, and an IDE for programming.
 
-Sugerencias: 
+Suggestions:
 
-1. Se recomienda utilizar Visual Studio Code, dado que este IDE presenta una gran amplitud de compatiblidad con casi todos o todos los lenguajes de programación.
-2. Se recomienda también tener instalado GitHub Desktop para poder llevar un mejor control visual de los commits y las versiones del proyecto. 
-3. Es altamente recomendable, que para el desarrollo de este proyecto, se tenga instalado la intefaz de Gajim, dado que esta interfaz provee un cliente el cual se conecta a servidores XMPP.
-   Con este cliente también se podría realizar ciertas pruebas de mensajería.
+1. Using Visual Studio Code is recommended, as this IDE offers broad compatibility with nearly all programming languages.
+2. Installing GitHub Desktop is also recommended to maintain better visual control over commits and project versions.
+3. It's highly advisable to install the Gajim interface for development. Gajim provides a client that connects to XMPP servers, which can be used for messaging tests.
 
-# Pasos a seguir para comenzar el proyecto
-Como primer paso, se debe crear un ambiente de javascript de la siguiente manera: npm init.
+# Steps to Start the Project
+As a first step, set up a JavaScript environment by executing: npm init.
 
-El segundo paso es dar enter a todo lo que se pregunta y, de preferencia, se debe colocar el link al repositorio cuando lo pregunte el init.
+In the second step, press Enter for all prompts, and preferably, provide the repository link when prompted by init.
 
-El tercer paso es instalar la librería node-xmpp-client, que se hace de la siguiente forma: $ npm install node-xmpp.
+The third step is to install the node-xmpp-client library. This is done using the following command: $ npm install node-xmpp.
 
-Luego de hacer los pasos anteriores, se debe crear un archivo con extensión js e importar de la siguiente forma: 
+Following these steps, create a .js file and import the following:
     - const { client, xml, jid } = require("@xmpp/client");
     - const debug = require("@xmpp/debug");
 
-Los dos anteriores imports nos permiten el client, xml y jid para conectarnos a un servidor xmpp y el debug para poder verificar que la conexión no nos esté dando mensajes de error.
+The above imports allow access to the client, xml, and jid for connecting to an XMPP server, and debug for verifying that the connection is error-free.
 
-Luego de esto, se debe crear una conexión al cliente xmpp de la siguiente manera: 
+After this, establish a connection to the XMPP client as follows:
 
 const client = client({
     service: "ws://localhost:5280/xmpp-websocket",
@@ -38,16 +36,16 @@ const client = client({
     password: "example",
 });
 
-En el anterior código, se debe cambiar el username y el password por los que se deseen utilizar. Además, se debe cambiar el service y el domain por los que se deseen utilizar.
+In the above code, modify username and password to your preferences, and adjust service and domain as needed.
 
-Es importante tener en cuenta lo siguiente: 
-- Si se tiene un servidor configurado con TCP, entonces se debe cambiar el ws del service por xmpp.
-- Si se tiene un servidor configurado coom TLS, entonces se debe usar xmpps en vez de ws en el service.
-- El transport default es ws y está dirigido para WebSocket.
+Important Considerations:
+- If you're using a server configured with TCP, replace ws in service with xmpp.
+- If you're using a server configured with TLS, use xmpps instead of ws in service.
+- The default transport is ws, which is designed for WebSocket.
 
-Por otro lado, es importante mencionar que el resource puede llegar a ser opcional en algunos casos. 
+Additionally, note that the resource might be optional in some cases.
 
-Luego de esto, se debe crear una función que se encargue de conectar el cliente al servidor. Esta función se debe llamar connect y se debe hacer de la siguiente manera:
+Subsequently, create a function to connect the client to the server. This function can be named connect and is implemented as follows:
 
 async function connect() {
     try {
@@ -58,109 +56,105 @@ async function connect() {
     }
 }
 
-Nota: La anterior función es de ejemplo, es posible que se implemente un sistema de login y registro para poder meter credenciales válidas a los campos de la conexión.
-También es importante mencionar que esta librería se puede usar leyendo los inputs de la consola o usando una interfaz de cualquier framework.
 
-Para utilizar la librería net, se debe hacer lo siguiente: 
+Note: The above function is an example. It's possible to implement a login and registration system to enter valid credentials for the connection fields. It's also important to mention that this 
+library can be used by reading console inputs or using an interface from any framework.
 
-1. Importar y crear un cliente de la siguiente manera: 
+For using the net library, follow these steps:
+
+1. Import and create a client as follows:
     const net = require("net"); 
-    const cliente = new net.Socket();
+    const client = new net.Socket();
 
-2. Crear una conexión como la siguiente: 
-    cliente.connect(5222, 'alumchat.xyz', function() {
-      //console.log('Conectado al servidor XMPP');
-      cliente.write("<stream:stream to='alumchat.xyz' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' version='1.0'>");
+2. Establish a connection like this:
+    client.connect(5222, 'alumchat.xyz', function() {
+        client.write("<stream:stream to='alumchat.xyz' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' version='1.0'>");
     });
 
-3. Para mandar información al servidor, se puede seguir la siguiente sintaxis: 
-    // Pidiendo al usuario los datos.
-    rl.question("Usuario: ", (username) => {
-        rl.question("Contraseña: ", (password) => {
-        cliente.on('data', function(data) {
-            if (data.toString().includes('<stream:features>')) {
-                // Enviar consulta de registro
-                const xmlRegister = `
-                <iq type="set" id="reg_1" mechanism='PLAIN'>
-                    <query xmlns="jabber:iq:register">
-                    <username>${username}</username>
-                    <password>${password}</password>
-                    </query>
-                </iq>
-                `;
-                cliente.write(xmlRegister);
-            } else if (data.toString().includes('<iq type="result"')) {
-                // Registro exitoso
-                console.log('Registro exitoso');
-                showMenu();
-            } else if (data.toString().includes('<iq type="error"')) {
-                // Error al registrar
-                console.log('Error al registrar', data.toString());
-            }
-        });
+
+3. To send information to the server, use the following syntax
+    rl.question("User: ", (username) => {
+        rl.question("Password: ", (password) => {
+            client.on('data', function(data) {
+                if (data.toString().includes('<stream:features>')) {
+                    const xmlRegister = `
+                    <iq type="set" id="reg_1" mechanism='PLAIN'>
+                        <query xmlns="jabber:iq:register">
+                        <username>${username}</username>
+                        <password>${password}</password>
+                        </query>
+                    </iq>
+                    `;
+                    client.write(xmlRegister);
+                } else if (data.toString().includes('<iq type="result"')) {
+                    console.log('Successful registration');
+                    showMenu();
+                } else if (data.toString().includes('<iq type="error"')) {
+                    console.log('Registration error', data.toString());
+                }
+            });
         });
     });
 
 
-    cliente.on('close', function() {
-        console.log('Conexión cerrada');
+
+    client.on('close', function() {
+        console.log('Connection closed');
     });
 
-Importante: El anterior código es un ejemplo de como realizar un registro de usuario.
+
+Note: The above code is an example of how to perform user registration.
 
 
 
-# Funciones utilizadas 
+# Used Functions
 
-Para el desarrollo del presente proyecto, se utilizaron las siguientes funciones:
+The following functions were used for developing this project:
 
-Parte de inicio:
+Initial Part:
 
-1. register(): Esta función sirve para crear un usuario en el servidor. Para ello, el método solicita un nombre de usuario y una contraseña. Es importante mencionar que para crear un usuario 
-               en el servidor, se debe crear de la siguiente manera: usuario20XXXX, en donde las X's pertencen al número de carnet perteneciente al usuario.
+1. register(): This function creates a user on the server. It prompts for a username and password. To create a user, the username should be in the format usuario20XXXX, where X's represent the 
+               student ID.
 
-2. login(username, password): Esta función solicita un usuario de la forma usuario20XXXX y una contraseña asociada al usuario. Luego de esto, se manda a verificar el usuario y la contraseña y 
-                              de ser correcto, se le permite a la persona ingresar el menú principal del programa en cuestión.
+2. login(username, password): This function asks for a username in the format usuario20XXXX and a corresponding password. Upon verifying the credentials, the person is granted access to the main 
+                              program menu.
 
-Página principal: 
+Main Page:
  
-En la página principal se tienen estas implementaciones: 
+In the main page, these implementations are present:
 
-0. Recibir notificaciones: Esta implementación está hecha directamente en la página principal y aquí entran solicitudes de amistad, invitaciones a chats grupales y mensajes de chats 1 a 1.
+0. Receiving Notifications: This implementation handles friend requests, group chat invitations, and 1-to-1 chat messages
 
-1. Enseñar todos los usuarios y su estado: En esta parte, se enseñan todos los contactos que la persona tiene en el servidor, la suscripción que tiene (si son o no amigos) y el estatus de las 
-                                           personas (esto quiere decir que si están online o no).
+1. Displaying All Users and Their Status: This part showcases all contacts the person has on the server, their subscription status (whether they're friends or not), and their online/offline 
+                                          status.
 
-2. Agregar un usuario a los contactos: En esta opción, existen dos subopciones en las cuales se pueden mandar solicitudes de amistad a otros usuarios del servidor (para esto se tiene que escribir el id del usuario)
-                                       y la segunda opción es aceptar solicitudes de amistad entrantes.
+2. Adding a User to Contacts: In this option, two sub-options allow sending friend requests to other users (by entering the user's ID) and accepting incoming friend requests.
 
-3. Mostrar detalles de un contacto: Acá lo que se hace es ingresar el jid del contacto al cual se quiera ver su información y el servidor lo que hace es devolver el JID del contacto, su correo dentro del servidor 
-                                    y la suscripción (si son o no amigos dentro del servidor).
+3. Showing Contact Details: This option takes the contact's JID to display their information: JID, server email, and subscription status (friend or not).
 
-4. Comunicación 1 a 1 con cualquier usuario/contacto: Para esta opción lo que se hace es ingresar el JID del usuario/contacto de la persona con la que se desea chatear y luego se procede a "abrir" un chat privado 
-                                                      entre uno mismo y el contacto. Es importante mencionar que si la persona aún no ha entrado al chat, entonces se procede a enviar el mensaje como notificación.
+4. 1-to-1 Communication with Users/Contacts: This option takes the JID of the user/contact to initiate a private chat. If the person hasn't entered the chat yet, the message is sent as a 
+                                             notification.
 
-5. Participar en chats grupales: Aquí existen dos subopciones, en donde se puede entrar a un chat grupal existente o crear uno nuevo. Aquí pueden entrar N personas a los chats grupales. En esta parte se puede enviar invitación a otras 
-                                 personas para que entren al chat grupal.
+5. Participating in Group Chats: Here, two sub-options are available for entering existing group chats or creating new ones. N people can participate in group chats. This section also allows 
+                                 sending invitations to others to join group chats.
 
-6. Definir un estado de presencia: Para esta opción, lo que se hace es solicitarle a la persona su status actual y el mensaje que desea poner para que los demás contactos lo puedan ver.
+6. Setting Presence Status: In this option, the person is asked for their current status and the message they want others to see.
 
-7. Centro de notificaciones: En esta opción es la bandeja de notificaciones de la persona y aquí se pueden ver mensajes entrantes, invitaciones a chats grupales y/o ver solicitudes de amistad.
+7. Notifications Center: This option is the person's notification tray, showing incoming messages, group chat invitations, and friend requests.
 
-8. Enviar archivos: En esta opción se pueden enviar archivos a las personas que se deseen. Los archivos pueden ser del tipo que se desea. Es importante destacar que los archivos que se mandan, son subidos directamente al servidor.
+8. Sending Files: Files can be sent to selected recipients. The file types are flexible, and uploaded files are stored directly on the server.
 
-9. Eliminar cuenta: En esta opción se puede eliminar permanentemente la cuenta del servidor XMPP.
+9. Delete Account: This option permanently deletes the XMPP account.
 
-10. Cerrar sesión: Esta opción funciona para poder salir del programa y definir el status offline en el servidor.
+10. Log Out: This option logs out the user and sets their status to offline on the server.
 
-# Tecnologías utilizadas
+# Technologies Used
 
-Las tecnologías utilizadas en el presente proyecto fueron las siguientes: 
+The following technologies were used in this project:
 
-1. NodeJS, el cual nos provee el entorno de programación de javascript.
-2. XMPP, que nos provee todo el protocolo para la mensajería entre personas mediante cualquier interfaz.
+1. NodeJS, providing the JavaScript programming environment.
+2. XMPP, supplying the protocol for messaging between individuals through various interfaces.
 
-# Autor
+# Author
 Javier Sebastián Valle Balsells
-Carnet 20159
-Redes
+Student ID: 20159
