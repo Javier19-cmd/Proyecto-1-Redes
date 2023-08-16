@@ -13,6 +13,8 @@ const request = require('request')
 // Password: 1234
 
 const readline = require("readline");
+const { invite } = require("simple-xmpp");
+const { default: messaging } = require("stanza/plugins/messaging");
 
 // const xmpp = client({
 //   service: "xmpp://alumchat.xyz:5222",
@@ -167,8 +169,36 @@ async function login(username, password) {
         if (body.length > MAX_MESSAGE_LENGTH) {
           const truncatedBody = body.substring(0, MAX_MESSAGE_LENGTH) + '...';
           console.log(`${from}: ${truncatedBody}`);
+          
+          // Guardando el mensaje en la lista.
+          messages.push(body)
+
+          // Viendo la lista.
+          // console.log(messages)
+
+          // Guardando el mensaje con el user, o sea lo que está antes del @, en el diccionario.
+          if (!messagesDictionary[from]) {
+            messagesDictionary[from] = [];
+          }
+          messagesDictionary[from].push(body);
+
+
         } else {
           console.log(`${from}: ${body}`);
+
+          // Guardando el mensaje en la lista.
+          messages.push(body)
+
+          const fromUser = from.split('@')[0]; // Obtener el nombre de usuario sin el dominio
+
+          if (!messagesDictionary[fromUser]) {
+            messagesDictionary[fromUser] = [];
+          }
+
+          messagesDictionary[fromUser].push(body);
+
+          // console.log("Messages dictionary: ", messagesDictionary)
+        
         }
       }
         
@@ -216,6 +246,7 @@ async function login(username, password) {
         
         //console.log("To: ", usernames, "username: ", username)
 
+        // Guardando la invitación en la lista.
         gChat.push(chatG)
 
         // Si el to no tiene una diagonal, entonces se imprime la invitación.
@@ -787,7 +818,7 @@ async function login(username, password) {
               function handleIncomingMessages() {
                 xmpp.on('stanza', (stanza) => {
 
-                  // console.log("Stanza: ", stanza)
+                  console.log("Stanza: ", stanza)
 
                   if (stanza.is('message') && stanza.attrs.type === 'chat') {
                     const from = stanza.attrs.from;
@@ -899,45 +930,62 @@ async function login(username, password) {
 
 
             console.log("1. Ver mensajes recibidos")
-            console.log("2. Ver solicitudes de amistad")
+            console.log("2. Ver invitaciones a chats grupales")
+            console.log("3. Ver solicitudes de amistad")
 
             rl.question("¿Qué opción deseas?: ", async (answer) => {
               switch (answer) {
                 case '1':
-                  // Imprimir los mensajes junto con índices para facilitar la elección del usuario
-                  messages.forEach((message, index) => {
-                    console.log(`${index + 1}: ${message}`);
-                  });
-                
+
+                  // console.log(messages)
+
+                  console.log("Diccionario: ", messagesDictionary)
+                  
+                  for (const user in messagesDictionary) {
+                    const userMessages = messagesDictionary[user];
+                    console.log(`Usuario: ${user}`);
+                    console.log(`  - ${userMessages}`);
+                    console.log(); // Agregar una línea en blanco entre usuarios
+                  }
+
                   // Preguntar al usuario a cuál mensaje desea responder
-                  rl.question("¿A cuál mensaje deseas responder? (Ingresa el número): ", (response) => {
-                    const messageIndex = parseInt(response) - 1;
-                    if (messageIndex >= 0 && messageIndex < messages.length) {
-                      // Mensaje válido seleccionado, capturar la respuesta del usuario
-                      rl.question(`Respuesta a "${messages[messageIndex]}": `, async (reply) => {
-                        
-                        // Obteniendo lo que está antes del @.
-                        const user = messages[messageIndex].split('@')[0];
-
-                        // Agregando el @alumchat.xyz
-                        const fullUser = user + "@alumchat.xyz";
-
-                        console.log("Full user: ", fullUser)
-                        
-                        const messageToSend = xml(
-                          "message",
-                          { type: "chat", to: fullUser }, // Usamos el usuario completo con el dominio
-                          xml("body", {}, reply),
-                        );
-                        await xmpp.send(messageToSend);
-                        console.log(`Respuesta enviada a ${fullUser}`);
-                        mainMenu(); // Volver al menú principal
+                  rl.question("¿A cuál mensaje deseas responder? (Ingresa el usuario): ", (response) => {
+                    const user = response.trim(); // El usuario debe ingresar el nombre de usuario
+                    const userMessages = messagesDictionary[user];
+                    
+                    if (userMessages) {
+                      console.log(`Mensajes de ${user}:`);
+                      userMessages.forEach((message, index) => {
+                        console.log(`${index + 1}. ${message}`);
                       });
+                      
+                      // rl.question("Selecciona el número del mensaje al que deseas responder: ", async (messageIndexResponse) => {
+                      //   const messageIndex = parseInt(messageIndexResponse) - 1;
+                      //   if (!isNaN(messageIndex) && messageIndex >= 0 && messageIndex < userMessages.length) {
+                      //     // Mensaje válido seleccionado, capturar la respuesta del usuario
+                      //     rl.question(`Respuesta a "${userMessages[messageIndex]}": `, async (reply) => {
+                      //       const fullUser = user + "@alumchat.xyz";
+                            
+                      //       const messageToSend = xml(
+                      //         "message",
+                      //         { type: "chat", to: fullUser },
+                      //         xml("body", {}, reply),
+                      //       );
+                      //       await xmpp.send(messageToSend);
+                      //       console.log(`Respuesta enviada a ${fullUser}`);
+                      //       mainMenu(); // Volver al menú principal
+                      //     });
+                      //   } else {
+                      //     console.log("Índice de mensaje inválido.");
+                      //     mainMenu(); // Volver al menú principal
+                      //   }
+                      // });
                     } else {
-                      console.log("Índice de mensaje inválido.");
+                      console.log(`No se encontraron mensajes para el usuario ${user}.`);
                       mainMenu(); // Volver al menú principal
                     }
                   });
+
                   break;                
                 case "2":
 
@@ -948,6 +996,13 @@ async function login(username, password) {
                     console.log("Invitación a chat grupal recibida de: ", chat)
                   })
                   break
+                
+                case "3": // Solicitudes de amistad.
+                  soliAmi.forEach((invite) => {
+                    console.log("Solicitud de amistad recibida de: ", invite)
+                  })
+
+
                 default:
                   console.log("Opción inválida.")
                   mainMenu(); // Vuelve al menú principal en caso de opción inválida
