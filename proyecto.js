@@ -576,7 +576,7 @@ async function login(username, password) {
         console.log("5. Participar en conversaciones grupales");
         console.log("6. Definir un mensaje de presencia");
         console.log("7. Centro de notificaciones");
-        console.log("8. Enviar/recibir archivos");
+        console.log("8. Enviar");
         console.log("9. Eliminar cuenta");
         console.log("10. Cerrar sesión");
       };
@@ -1011,7 +1011,7 @@ async function login(username, password) {
             break;
 
           case "8":
-            console.log("Enviando/recibiendo archivos...");
+            console.log("Enviando...");
 
             // Función para enviar un archivo a un contacto específico
             async function enviarArchivo(contactJID, filePath) {
