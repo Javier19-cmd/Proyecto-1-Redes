@@ -123,30 +123,30 @@ Main Page:
  
 In the main page, these implementations are present:
 
-0. Receiving Notifications: This implementation handles friend requests, group chat invitations, and 1-to-1 chat messages
+0. **Receiving Notifications:** This implementation handles friend requests, group chat invitations, and 1-to-1 chat messages
 
-1. Displaying All Users and Their Status: This part showcases all contacts the person has on the server, their subscription status (whether they're friends or not), and their online/offline 
+1. **Displaying All Users and Their Status**: This part showcases all contacts the person has on the server, their subscription status (whether they're friends or not), and their online/offline 
                                           status.
 
-2. Adding a User to Contacts: In this option, two sub-options allow sending friend requests to other users (by entering the user's ID) and accepting incoming friend requests.
+2. **Adding a User to Contacts:** In this option, two sub-options allow sending friend requests to other users (by entering the user's ID) and accepting incoming friend requests.
 
-3. Showing Contact Details: This option takes the contact's JID to display their information: JID, server email, and subscription status (friend or not).
+3. **Showing Contact Details:** This option takes the contact's JID to display their information: JID, server email, and subscription status (friend or not).
 
-4. 1-to-1 Communication with Users/Contacts: This option takes the JID of the user/contact to initiate a private chat. If the person hasn't entered the chat yet, the message is sent as a 
+4. **1-to-1 Communication with Users/Contacts:** This option takes the JID of the user/contact to initiate a private chat. If the person hasn't entered the chat yet, the message is sent as a 
                                              notification.
 
-5. Participating in Group Chats: Here, two sub-options are available for entering existing group chats or creating new ones. N people can participate in group chats. This section also allows 
+5. **Participating in Group Chats:** Here, two sub-options are available for entering existing group chats or creating new ones. N people can participate in group chats. This section also allows 
                                  sending invitations to others to join group chats.
 
-6. Setting Presence Status: In this option, the person is asked for their current status and the message they want others to see.
+6. **Setting Presence Status:** In this option, the person is asked for their current status and the message they want others to see.
 
-7. Notifications Center: This option is the person's notification tray, showing incoming messages, group chat invitations, and friend requests.
+7. **Notifications Center:** This option is the person's notification tray, showing incoming messages, group chat invitations, and friend requests.
 
-8. Sending Files: Files can be sent in both one-on-one chats and group chats. Additionally, the files are sent in a decoded format and are re-encoded upon reception.
+8. **Sending Files:** Files can be sent in both one-on-one chats and group chats. Additionally, the files are sent in a decoded format and are re-encoded upon reception.
 
-9. Delete Account: This option permanently deletes the XMPP account.
+9. **Delete Account:** This option permanently deletes the XMPP account.
 
-10. Log Out: This option logs out the user and sets their status to offline on the server.
+10. **Log Out:** This option logs out the user and sets their status to offline on the server.
 
 # Technologies Used
 
