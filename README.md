@@ -142,7 +142,7 @@ In the main page, these implementations are present:
 
 7. Notifications Center: This option is the person's notification tray, showing incoming messages, group chat invitations, and friend requests.
 
-8. Sending Files: Files can be sent to selected recipients. The file types are flexible, and uploaded files are stored directly on the server.
+8. Sending Files: Files can be sent in both one-on-one chats and group chats. Additionally, the files are sent in a decoded format and are re-encoded upon reception.
 
 9. Delete Account: This option permanently deletes the XMPP account.
 
