@@ -363,34 +363,31 @@ async function login(username, password) {
     }
 
     
-    // Creando el cuarto.
     async function createGroupChat(roomJid, nickname) {
       roomJid = roomJid + "@conference.alumchat.xyz";
-
+    
       try {
         await xmpp.send(xml('presence', { to: roomJid + '/' + nickname }));
         console.log('Joined group chat:', roomJid);
-
+    
         // Leyendo lo que el usuario ingrese desde el teclado.
         const rl2 = readline.createInterface({
           input: process.stdin,
           output: process.stdout
         });
-
+    
         rl2.on('line', async (message) => {
           if (message.trim() === 'exit') {
             // Salir del chat al escribir "exit"
-            mainMenu()
+            mainMenu();
+            rl2.close();
           } else if (message.trim() === 'invitar') {
             rl2.question('Ingresa el nombre de la persona a la que deseas invitar: ', async (nombrePersona) => {
-              
               // Verificando que el nombre de la persona no sea el mismo que el user del que está invitando.
               if (nombrePersona !== username) {
-                //console.log("Nombres no iguales.")
                 const jidInvitado = `${nombrePersona}@alumchat.xyz`;
-
-                console.log("Nombre: ", jidInvitado)
-  
+                console.log("Nombre: ", jidInvitado);
+      
                 // Enviar una invitación al usuario
                 const invite = xml(
                   'message',
@@ -407,7 +404,11 @@ async function login(username, password) {
                 );
                 await xmpp.send(invite);
               }
-              //console.log(`Invitación enviada a ${jidInvitado}`);
+            });
+          } else if (message.trim() === 'archivo') {
+            rl2.question("Ingresa la ruta del archivo que deseas enviar: ", async (filePath) => {
+              // Enviar el archivo al grupo
+              await enviarArchivo(roomJid, filePath);
             });
           } else {
             // Mandando un mensaje al chat.
@@ -419,33 +420,42 @@ async function login(username, password) {
             await xmpp.send(messageT).catch((err) => { console.warn(err) });
           }
         });
-
+    
         xmpp.on('stanza', async (stanza) => {
           if (stanza.is('message') && stanza.getChild('body')) {
             const { from, body } = stanza;
-            //console.log('Message received from', from, ':', body);
-
+    
             // Verificando el tipo del body de la stanza.
             if (stanza.attrs.type === "groupchat") {
               // Obteniendo de quien se mandó el mensaje.
               const from = stanza.attrs.from;
               // Obteniendo el cuerpo del mensaje.
               const body = stanza.getChildText("body");
-
-              // console.log(`${from}: ${body}`);
-
-              // Si el from y el body no están vacíos, entonces se imprime el mensaje.
-              if (from && body) {
+              // Obteniendo el subject del mensaje.
+              const subject = stanza.getChildText("subject");
+    
+              // Si el from, el body y el subject no están vacíos, entonces se imprime el mensaje.
+              if (from && body && subject && (subject.includes('Archivo:') || subject.includes('File:'))) {
+                console.log(`${from}: Archivo recibido`);
+                const fileName = subject.slice(subject.indexOf(':') + 1).trim();
+                const base64Data = body.slice(7); // Eliminar "file://"
+                const filePath = `./${fileName}`; // Cambiar la ruta según tu necesidad
+                
+                // Convertir base64 a archivo y guardarlo
+                await saveBase64ToFile(base64Data, filePath);
+                
+                console.log(`Archivo recibido de ${from}: ${filePath}`);
+              } else if (from && body) {
                 console.log(`${from}: ${body}`);
               }
             }
           }
         });
-
       } catch (error) {
         console.error('Error joining group chat:', error.toString());
       }
     }
+    
     
     async function joinGroupChat(roomJid, nickname) {
       console.log("Room JID: ", roomJid);
@@ -465,12 +475,13 @@ async function login(username, password) {
         rl.on('line', async (message) => {
           if (message.trim() === 'exit') {
             // Salir del chat al escribir "exit"
-            mainMenu()
+            mainMenu();
+            rl.close();
           } else if (message.trim() === 'invitar') {
             rl.question('Ingresa el nombre de la persona a la que deseas invitar: ', async (nombrePersona) => {
               const jidInvitado = `${nombrePersona}@alumchat.xyz`;
-
-              console.log("Nombre: ", jidInvitado)
+    
+              console.log("Nombre: ", jidInvitado);
     
               // Enviar una invitación al usuario
               const invite = xml(
@@ -490,6 +501,11 @@ async function login(username, password) {
     
               console.log(`Invitación enviada a ${jidInvitado}`);
             });
+          } else if (message.trim() === 'archivo') {
+            rl.question("Ingresa la ruta del archivo que deseas enviar: ", async (filePath) => {
+              // Enviar el archivo al grupo
+              await enviarArchivo(roomJid, filePath);
+            });
           } else {
             // Mandando un mensaje al chat.
             const messageT = xml(
@@ -504,7 +520,6 @@ async function login(username, password) {
         xmpp.on('stanza', async (stanza) => {
           if (stanza.is('message') && stanza.getChild('body')) {
             const { from, body } = stanza;
-            //console.log('Message received from', from, ':', body);
     
             // Verificando el tipo del body de la stanza.
             if (stanza.attrs.type === "groupchat") {
@@ -512,55 +527,67 @@ async function login(username, password) {
               const from = stanza.attrs.from;
               // Obteniendo el cuerpo del mensaje.
               const body = stanza.getChildText("body");
+              // Obteniendo el subject del mensaje.
+              const subject = stanza.getChildText("subject");
     
-              // console.log(`${from}: ${body}`);
-    
-              // Si el from y el body no están vacíos, entonces se imprime el mensaje.
-              if (from && body) {
+              // Si el from, el body y el subject no están vacíos, entonces se imprime el mensaje.
+              if (from && body && subject && (subject.includes('Archivo:') || subject.includes('File:'))) {
+                console.log(`${from}: Archivo recibido`);
+                const fileName = subject.slice(subject.indexOf(':') + 1).trim();
+                const base64Data = body.slice(7); // Eliminar "file://"
+                const filePath = `./${fileName}`; // Cambiar la ruta según tu necesidad
+                
+                // Convertir base64 a archivo y guardarlo
+                await saveBase64ToFile(base64Data, filePath);
+                
+                console.log(`Archivo recibido de ${from}: ${filePath}`);
+              } else if (from && body) {
                 console.log(`${from}: ${body}`);
               }
             }
           }
         });
-    
       } catch (error) {
         console.error('Error joining group chat:', error.toString());
       }
     }
 
-    async function enviarArchivo(contactJID, filePath) {
-      const newC = contactJID + '@alumchat.xyz';
+    // Función para convertir archivo a base64
+    function fileToBase64(filePath) {
+      const fs = require('fs');
+      const fileData = fs.readFileSync(filePath);
+      const base64Data = fileData.toString('base64');
+      return base64Data;
+    }
+    
 
-      // Leer el archivo para obtener su nombre y tamaño
-      const fileStats = fs.statSync(filePath);
+    async function enviarArchivo(room, filePath) {
+      //const newC = contactJID + '@conference.alumchat.xyz';
+    
+      // Leer el archivo y convertirlo a base64
+      const base64File = fileToBase64(filePath);
       const fileName = filePath.split('/').pop(); // Obtener el nombre del archivo desde la ruta
-      const fileSize = fileStats.size;
-
-      const xmppDomain = "alumchat.xyz"
-
-      // Crear un enlace de descarga para el archivo
-      const fileURL = `http://${xmppDomain}:5222/files/${fileName}`;
-
-      // Crear el elemento de "Out of Band Data" con los metadatos del archivo
-      const oobData = xml(
-        'x',
-        { xmlns: 'jabber:x:oob' },
-        xml('url', {}, fileURL),
-        xml('desc', {}, `Archivo: ${fileName}, Tamaño: ${fileSize} bytes`)
-      );
-
-      // Crear el mensaje con el archivo adjunto
+    
+      // Crear el mensaje con el archivo en base64
       const message = xml(
         'message',
-        { to: newC, type: 'chat' },
-        xml('body', {}, `${fileURL}`),
-        oobData
+        { type: 'groupchat', to: room },
+        xml('body', {}, `file://${base64File}`),
+        xml('subject', {}, `Archivo: ${fileName}`)
       );
-
+    
       // Enviar el mensaje al contacto
       await xmpp.send(message);
-      console.log('Archivo enviado con éxito.');
+      //console.log('Archivo enviado con éxito. ' + message);
     }
+
+    async function saveBase64ToFile(base64Data, filePath) {
+      const fs = require('fs');
+      const fileData = Buffer.from(base64Data, 'base64');
+      await fs.promises.writeFile(filePath, fileData);
+      console.log(`Archivo guardado en: ${filePath}`);
+    }
+    
     
 
     
@@ -576,7 +603,7 @@ async function login(username, password) {
         console.log("5. Participar en conversaciones grupales");
         console.log("6. Definir un mensaje de presencia");
         console.log("7. Centro de notificaciones");
-        console.log("8. Enviar");
+        console.log("8. Enviar archivos");
         console.log("9. Eliminar cuenta");
         console.log("10. Cerrar sesión");
       };
@@ -814,27 +841,49 @@ async function login(username, password) {
             async function chatWithUser(userJID) {
               console.log(`Iniciando chat con: ${userJID}`);
             
-              // Función para manejar los mensajes entrantes del usuario
-              function handleIncomingMessages() {
-                xmpp.on('stanza', (stanza) => {
+              
+                // Función para manejar los mensajes entrantes del usuario
+                function handleIncomingMessages() {
+                  xmpp.on('stanza', async (stanza) => {
+                    if (stanza.is('message') && stanza.attrs.type === 'chat') {
+                      const from = stanza.attrs.from;
+                      const body = stanza.getChildText('body');
+                      const subject = stanza.getChildText('subject');
 
-                  console.log("Stanza: ", stanza)
+                      // console.log("Recibiendo: ", stanza)
+                      
+                      console.log("Stanza: ", stanza)
 
-                  if (stanza.is('message') && stanza.attrs.type === 'chat') {
-                    const from = stanza.attrs.from;
-                    const body = stanza.getChildText('body');
-
-                    //console.log(body)
-
-                    if (body){
-                      console.log(`${from}: ${body}`);
+                      // if(subject){
+                      //   console.log("Subject: ", subject)
+                      // }
+              
+                      if (subject && (subject.includes('Archivo:') || subject.includes('File:'))) {
+                        console.log("Archivo recibido");
+                        const fileName = subject.slice(subject.indexOf(':') + 1).trim();
+                        const base64Data = body.slice(7); // Eliminar "file://"
+                        const filePath = `./${fileName}`; // Cambiar la ruta según tu necesidad
+                      
+                        // Convertir base64 a archivo y guardarlo
+                        await saveBase64ToFile(base64Data, filePath);
+                      
+                        console.log(`Archivo recibido de ${from}: ${filePath}`);
+                      } else if (body) {
+                        console.log(`${from}: ${body}`);
+                      }
                     }
-                  }
-                });
-              }
+                  });
+                }
             
               // Comenzar a escuchar mensajes del usuario
               handleIncomingMessages();
+
+              async function saveBase64ToFile(base64Data, filePath) {
+                const fs = require('fs');
+                const fileData = Buffer.from(base64Data, 'base64');
+                await fs.promises.writeFile(filePath, fileData);
+                console.log(`Archivo guardado en: ${filePath}`);
+              }
             
               // Configurar el manejo de entrada de mensajes desde la consola
               const rl = readline.createInterface({
@@ -849,11 +898,46 @@ async function login(username, password) {
                 if (message.trim() === 'exit') {
                   // Salir del chat al escribir "exit"
                   mainMenu();
+                  rl.close();
                 } else if (message.trim() === 'archivo'){
                   rl.question("Ingresa la ruta del archivo que deseas enviar: ", async (filePath) => {
-                    await enviarArchivo(userJID, filePath);
-                  });
-                } 
+                    // Enviar el archivo al usuario
+                    await enviarArchivoBase64(userJID, filePath);
+                    
+                    
+                    // Función para convertir archivo a base64
+                    function fileToBase64(filePath) {
+                      const fs = require('fs');
+                      const fileData = fs.readFileSync(filePath);
+                      const base64Data = fileData.toString('base64');
+                      return base64Data;
+                    }
+
+                    // Función para enviar un archivo como mensaje en base64
+                    async function enviarArchivoBase64(contactJID, filePath) {
+                      // const newC = contactJID + '@alumchat.xyz';
+
+                      // Leer el archivo y convertirlo a base64
+                      const base64File = fileToBase64(filePath);
+                      const fileName = filePath.split('/').pop(); // Obtener el nombre del archivo desde la ruta
+
+                      // Crear el mensaje con el archivo en base64
+                      const message = xml(
+                        'message',
+                        { type: 'chat', to: contactJID },
+                        xml('body', {}, `file://${base64File}`),
+                        xml('subject', {}, `Archivo: ${fileName}`)
+                      );
+
+                      console.log(message);
+
+                      // Enviar el mensaje al contacto
+                      await xmpp.send(message);
+                      //console.log('Archivo enviado con éxito. ' + message);
+                    }
+
+                    });
+                }
                 else {
                   // Enviando el mensaje al usuario destino
                   const messageToSend = xml(
@@ -1011,36 +1095,30 @@ async function login(username, password) {
             break;
 
           case "8":
-            console.log("Enviando...");
+            console.log("Enviando archivos...");
 
-            // Función para enviar un archivo a un contacto específico
-            async function enviarArchivo(contactJID, filePath) {
+            // Función para convertir archivo a base64
+            function fileToBase64(filePath) {
+              const fs = require('fs');
+              const fileData = fs.readFileSync(filePath);
+              const base64Data = fileData.toString('base64');
+              return base64Data;
+            }
+
+            // Función para enviar un archivo como mensaje en base64
+            async function enviarArchivoBase64(contactJID, filePath) {
               const newC = contactJID + '@alumchat.xyz';
 
-              // Leer el archivo para obtener su nombre y tamaño
-              const fileStats = fs.statSync(filePath);
+              // Leer el archivo y convertirlo a base64
+              const base64File = fileToBase64(filePath);
               const fileName = filePath.split('/').pop(); // Obtener el nombre del archivo desde la ruta
-              const fileSize = fileStats.size;
 
-              const xmppDomain = "alumchat.xyz"
-
-              // Crear un enlace de descarga para el archivo
-              const fileURL = `http://${xmppDomain}:5222/files/${fileName}`;
-
-              // Crear el elemento de "Out of Band Data" con los metadatos del archivo
-              const oobData = xml(
-                'x',
-                { xmlns: 'jabber:x:oob' },
-                xml('url', {}, fileURL),
-                xml('desc', {}, `Archivo: ${fileName}, Tamaño: ${fileSize} bytes`)
-              );
-
-              // Crear el mensaje con el archivo adjunto
+              // Crear el mensaje con el archivo en base64
               const message = xml(
                 'message',
                 { to: newC, type: 'chat' },
-                xml('body', {}, `Aquí tienes un archivo para descargar: ${fileURL}`),
-                oobData
+                xml('body', {}, `file://${base64File}`),
+                xml('subject', {}, `Archivo: ${fileName}`)
               );
 
               // Enviar el mensaje al contacto
@@ -1048,10 +1126,10 @@ async function login(username, password) {
               console.log('Archivo enviado con éxito.');
             }
 
-            // Solicitar información para enviar el archivo
+            // Solicitar información para enviar el archivo en base64
             rl.question('JID del contacto al que deseas enviar el archivo: ', (contactJID) => {
               rl.question('Ruta del archivo que deseas enviar: ', (filePath) => {
-                enviarArchivo(contactJID, filePath)
+                enviarArchivoBase64(contactJID, filePath)
                   .then(() => {
                     mainMenu(); // Vuelve al menú principal después de completar la opción
                   })
@@ -1061,6 +1139,7 @@ async function login(username, password) {
                   });
               });
             });
+
             break;
 
           case "9":
