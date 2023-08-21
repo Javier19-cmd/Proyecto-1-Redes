@@ -123,7 +123,7 @@ Main Page:
  
 In the main page, these implementations are present:
 
-0. **Receiving Notifications:** This implementation handles friend requests, group chat invitations, and 1-to-1 chat messages
+0. <span style="background-color: yellow;"> **Receiving Notifications:**<span> This implementation handles friend requests, group chat invitations, and 1-to-1 chat messages
 
 1. **Displaying All Users and Their Status**: This part showcases all contacts the person has on the server, their subscription status (whether they're friends or not), and their online/offline 
                                           status.
