@@ -1,3 +1,14 @@
+# Table of Contents
+
+- [Project 1: Chat with XMPP Protocol](#project-1-chat-with-xmpp-protocol)
+  - [Prerequisites for Project Development Environment](#prerequisites-for-project-development-environment)
+  - [Steps to Start the Project](#steps-to-start-the-project)
+  - [Used Functions](#used-functions)
+- [Technologies Used](#technologies-used)
+- [Important](#important)
+- [Author](#author)
+
+
 # Project 1: Chat with XMPP Protocol
 
 This project consists of a WhatsApp-style chat application that enables 1-to-1 communication with other users as well as group chat functionality. The project utilizes the updated XMPP protocol
