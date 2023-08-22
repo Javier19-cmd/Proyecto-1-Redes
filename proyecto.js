@@ -439,7 +439,7 @@ async function login(username, password) {
                 console.log(`${from}: Archivo recibido`);
                 const fileName = subject.slice(subject.indexOf(':') + 1).trim();
                 const base64Data = body.slice(7); // Eliminar "file://"
-                const filePath = `./${fileName}`; // Cambiar la ruta según tu necesidad
+                const filePath = `./recibidos/${fileName}`; // Cambiar la ruta según tu necesidad
                 
                 // Convertir base64 a archivo y guardarlo
                 await saveBase64ToFile(base64Data, filePath);
@@ -535,7 +535,7 @@ async function login(username, password) {
                 console.log(`${from}: Archivo recibido`);
                 const fileName = subject.slice(subject.indexOf(':') + 1).trim();
                 const base64Data = body.slice(7); // Eliminar "file://"
-                const filePath = `./${fileName}`; // Cambiar la ruta según tu necesidad
+                const filePath = `./recibidos/${fileName}`; // Cambiar la ruta según tu necesidad
                 
                 // Convertir base64 a archivo y guardarlo
                 await saveBase64ToFile(base64Data, filePath);
@@ -852,7 +852,7 @@ async function login(username, password) {
 
                       // console.log("Recibiendo: ", stanza)
                       
-                      console.log("Stanza: ", stanza)
+                      // console.log("Stanza: ", stanza)
 
                       // if(subject){
                       //   console.log("Subject: ", subject)
@@ -862,7 +862,7 @@ async function login(username, password) {
                         console.log("Archivo recibido");
                         const fileName = subject.slice(subject.indexOf(':') + 1).trim();
                         const base64Data = body.slice(7); // Eliminar "file://"
-                        const filePath = `./${fileName}`; // Cambiar la ruta según tu necesidad
+                        const filePath = `./recibidos/${fileName}`; // Cambiar la ruta según tu necesidad
                       
                         // Convertir base64 a archivo y guardarlo
                         await saveBase64ToFile(base64Data, filePath);
