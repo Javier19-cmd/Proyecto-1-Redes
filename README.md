@@ -113,10 +113,10 @@ The following functions were used for developing this project:
 
 Initial Part:
 
-1. register(): This function creates a user on the server. It prompts for a username and password. To create a user, the username should be in the format usuario20XXXX, where X's represent the 
+1. **register():** This function creates a user on the server. It prompts for a username and password. To create a user, the username should be in the format usuario20XXXX, where X's represent the 
                student ID.
 
-2. login(username, password): This function asks for a username in the format usuario20XXXX and a corresponding password. Upon verifying the credentials, the person is granted access to the main 
+2. **login(username, password):** This function asks for a username in the format usuario20XXXX and a corresponding password. Upon verifying the credentials, the person is granted access to the main 
                               program menu.
 
 Main Page:
@@ -154,6 +154,10 @@ The following technologies were used in this project:
 
 1. NodeJS, providing the JavaScript programming environment.
 2. XMPP, supplying the protocol for messaging between individuals through various interfaces.
+
+## Important
+
+If you wish to clone the repository, it is highly important to run the command npm i in order to install all the packages used in the project.
 
 # Author
 Javier Sebastián Valle Balsells
