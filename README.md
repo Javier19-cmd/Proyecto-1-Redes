@@ -171,5 +171,6 @@ The following technologies were used in this project:
 If you wish to clone the repository, it is highly important to run the command npm i in order to install all the packages used in the project.
 
 # Author
+
 Javier Sebastián Valle Balsells
 Student ID: 20159
