@@ -445,6 +445,16 @@ async function login(username, password) {
                 await saveBase64ToFile(base64Data, filePath);
                 
                 console.log(`Archivo recibido de ${from}: ${filePath}`);
+              } else if (from && body && (body.includes('Archivo:') || body.includes("File:"))) {
+                console.log("Archivo recibido");
+                const fileName = body.slice(body.indexOf(':') + 1).trim();
+                const base64Data = body.split('\n')[1].slice(7); // Eliminar "file://"
+                const filePath = `./recibidos/${fileName}`; // Cambiar la ruta según tu necesidad
+            
+                // Convertir base64 a archivo y guardarlo
+                await saveBase64ToFile(base64Data, filePath);
+            
+                console.log(`Archivo recibido de ${from}: ${filePath}`);
               } else if (from && body) {
                 console.log(`${from}: ${body}`);
               }
@@ -541,6 +551,16 @@ async function login(username, password) {
                 await saveBase64ToFile(base64Data, filePath);
                 
                 console.log(`Archivo recibido de ${from}: ${filePath}`);
+              } else if (from && body && (body.includes('Archivo:') || body.includes("File:"))) {
+                console.log("Archivo recibido");
+                const fileName = body.slice(body.indexOf(':') + 1).trim();
+                const base64Data = body.split('\n')[1].slice(7); // Eliminar "file://"
+                const filePath = `./recibidos/${fileName}`; // Cambiar la ruta según tu necesidad
+            
+                // Convertir base64 a archivo y guardarlo
+                await saveBase64ToFile(base64Data, filePath);
+            
+                console.log(`Archivo recibido de ${from}: ${filePath}`);
               } else if (from && body) {
                 console.log(`${from}: ${body}`);
               }
@@ -603,9 +623,9 @@ async function login(username, password) {
         console.log("5. Participar en conversaciones grupales");
         console.log("6. Definir un mensaje de presencia");
         console.log("7. Centro de notificaciones");
-        console.log("8. Enviar archivos");
-        console.log("9. Eliminar cuenta");
-        console.log("10. Cerrar sesión");
+        //console.log("8. Enviar archivos");
+        console.log("8. Eliminar cuenta");
+        console.log("9. Cerrar sesión");
       };
       
       opciones()
@@ -868,6 +888,16 @@ async function login(username, password) {
                         await saveBase64ToFile(base64Data, filePath);
                       
                         console.log(`Archivo recibido de ${from}: ${filePath}`);
+                      } else if (body.includes('Archivo:') || body.includes("File:")) {
+                        console.log("Archivo recibido");
+                        const fileName = body.slice(body.indexOf(':') + 1).trim();
+                        const base64Data = body.split('\n')[1].slice(7); // Eliminar "file://"
+                        const filePath = `./recibidos/${fileName}`; // Cambiar la ruta según tu necesidad
+                    
+                        // Convertir base64 a archivo y guardarlo
+                        await saveBase64ToFile(base64Data, filePath);
+                    
+                        console.log(`Archivo recibido de ${from}: ${filePath}`);
                       } else if (body) {
                         console.log(`${from}: ${body}`);
                       }
@@ -929,7 +959,7 @@ async function login(username, password) {
                         xml('subject', {}, `Archivo: ${fileName}`)
                       );
 
-                      console.log(message);
+                      //console.log(message);
 
                       // Enviar el mensaje al contacto
                       await xmpp.send(message);
@@ -1023,7 +1053,7 @@ async function login(username, password) {
 
                   // console.log(messages)
 
-                  console.log("Diccionario: ", messagesDictionary)
+                  //console.log("Diccionario: ", messagesDictionary)
                   
                   for (const user in messagesDictionary) {
                     const userMessages = messagesDictionary[user];
@@ -1032,44 +1062,46 @@ async function login(username, password) {
                     console.log(); // Agregar una línea en blanco entre usuarios
                   }
 
-                  // Preguntar al usuario a cuál mensaje desea responder
-                  rl.question("¿A cuál mensaje deseas responder? (Ingresa el usuario): ", (response) => {
-                    const user = response.trim(); // El usuario debe ingresar el nombre de usuario
-                    const userMessages = messagesDictionary[user];
-                    
-                    if (userMessages) {
-                      console.log(`Mensajes de ${user}:`);
-                      userMessages.forEach((message, index) => {
-                        console.log(`${index + 1}. ${message}`);
-                      });
-                      
-                      // rl.question("Selecciona el número del mensaje al que deseas responder: ", async (messageIndexResponse) => {
-                      //   const messageIndex = parseInt(messageIndexResponse) - 1;
-                      //   if (!isNaN(messageIndex) && messageIndex >= 0 && messageIndex < userMessages.length) {
-                      //     // Mensaje válido seleccionado, capturar la respuesta del usuario
-                      //     rl.question(`Respuesta a "${userMessages[messageIndex]}": `, async (reply) => {
-                      //       const fullUser = user + "@alumchat.xyz";
-                            
-                      //       const messageToSend = xml(
-                      //         "message",
-                      //         { type: "chat", to: fullUser },
-                      //         xml("body", {}, reply),
-                      //       );
-                      //       await xmpp.send(messageToSend);
-                      //       console.log(`Respuesta enviada a ${fullUser}`);
-                      //       mainMenu(); // Volver al menú principal
-                      //     });
-                      //   } else {
-                      //     console.log("Índice de mensaje inválido.");
-                      //     mainMenu(); // Volver al menú principal
-                      //   }
-                      // });
-                    } else {
-                      console.log(`No se encontraron mensajes para el usuario ${user}.`);
-                      mainMenu(); // Volver al menú principal
-                    }
-                  });
+                  mainMenu()
 
+                  // Preguntar al usuario a cuál mensaje desea responder
+                  // rl.question("¿A cuál mensaje deseas responder? (Ingresa el usuario): ", (response) => {
+                  //   const user = response.trim(); // El usuario debe ingresar el nombre de usuario
+                  //   const userMessages = messagesDictionary[user];
+                    
+                  //   if (userMessages) {
+                  //     console.log(`Mensajes de ${user}:`);
+                  //     userMessages.forEach((message, index) => {
+                  //       console.log(`${index + 1}. ${message}`);
+                  //     });
+                      
+                  //     // rl.question("Selecciona el número del mensaje al que deseas responder: ", async (messageIndexResponse) => {
+                  //     //   const messageIndex = parseInt(messageIndexResponse) - 1;
+                  //     //   if (!isNaN(messageIndex) && messageIndex >= 0 && messageIndex < userMessages.length) {
+                  //     //     // Mensaje válido seleccionado, capturar la respuesta del usuario
+                  //     //     rl.question(`Respuesta a "${userMessages[messageIndex]}": `, async (reply) => {
+                  //     //       const fullUser = user + "@alumchat.xyz";
+                            
+                  //     //       const messageToSend = xml(
+                  //     //         "message",
+                  //     //         { type: "chat", to: fullUser },
+                  //     //         xml("body", {}, reply),
+                  //     //       );
+                  //     //       await xmpp.send(messageToSend);
+                  //     //       console.log(`Respuesta enviada a ${fullUser}`);
+                  //     //       mainMenu(); // Volver al menú principal
+                  //     //     });
+                  //     //   } else {
+                  //     //     console.log("Índice de mensaje inválido.");
+                  //     //     mainMenu(); // Volver al menú principal
+                  //     //   }
+                  //     // });
+                  //   } else {
+                  //     console.log(`No se encontraron mensajes para el usuario ${user}.`);
+                  //     mainMenu(); // Volver al menú principal
+                  //   }
+                  // });
+                  //mainMenu()
                   break;                
                 case "2":
 
@@ -1079,12 +1111,15 @@ async function login(username, password) {
                   gChat.forEach((chat) => {
                     console.log("Invitación a chat grupal recibida de: ", chat)
                   })
+                  mainMenu()
                   break
                 
                 case "3": // Solicitudes de amistad.
                   soliAmi.forEach((invite) => {
                     console.log("Solicitud de amistad recibida de: ", invite)
                   })
+                  mainMenu()
+                  break
 
 
                 default:
@@ -1094,55 +1129,55 @@ async function login(username, password) {
             
             break;
 
+          // case "8":
+          //   console.log("Enviando archivos...");
+
+          //   // Función para convertir archivo a base64
+          //   function fileToBase64(filePath) {
+          //     const fs = require('fs');
+          //     const fileData = fs.readFileSync(filePath);
+          //     const base64Data = fileData.toString('base64');
+          //     return base64Data;
+          //   }
+
+          //   // Función para enviar un archivo como mensaje en base64
+          //   async function enviarArchivoBase64(contactJID, filePath) {
+          //     const newC = contactJID + '@alumchat.xyz';
+
+          //     // Leer el archivo y convertirlo a base64
+          //     const base64File = fileToBase64(filePath);
+          //     const fileName = filePath.split('/').pop(); // Obtener el nombre del archivo desde la ruta
+
+          //     // Crear el mensaje con el archivo en base64
+          //     const message = xml(
+          //       'message',
+          //       { to: newC, type: 'chat' },
+          //       xml('body', {}, `file://${base64File}`),
+          //       xml('subject', {}, `Archivo: ${fileName}`)
+          //     );
+
+          //     // Enviar el mensaje al contacto
+          //     await xmpp.send(message);
+          //     console.log('Archivo enviado con éxito.');
+          //   }
+
+          //   // Solicitar información para enviar el archivo en base64
+          //   rl.question('JID del contacto al que deseas enviar el archivo: ', (contactJID) => {
+          //     rl.question('Ruta del archivo que deseas enviar: ', (filePath) => {
+          //       enviarArchivoBase64(contactJID, filePath)
+          //         .then(() => {
+          //           mainMenu(); // Vuelve al menú principal después de completar la opción
+          //         })
+          //         .catch((err) => {
+          //           console.error('Error al enviar el archivo:', err);
+          //           mainMenu(); // Vuelve al menú principal después de completar la opción
+          //         });
+          //     });
+          //   });
+
+          //   break;
+
           case "8":
-            console.log("Enviando archivos...");
-
-            // Función para convertir archivo a base64
-            function fileToBase64(filePath) {
-              const fs = require('fs');
-              const fileData = fs.readFileSync(filePath);
-              const base64Data = fileData.toString('base64');
-              return base64Data;
-            }
-
-            // Función para enviar un archivo como mensaje en base64
-            async function enviarArchivoBase64(contactJID, filePath) {
-              const newC = contactJID + '@alumchat.xyz';
-
-              // Leer el archivo y convertirlo a base64
-              const base64File = fileToBase64(filePath);
-              const fileName = filePath.split('/').pop(); // Obtener el nombre del archivo desde la ruta
-
-              // Crear el mensaje con el archivo en base64
-              const message = xml(
-                'message',
-                { to: newC, type: 'chat' },
-                xml('body', {}, `file://${base64File}`),
-                xml('subject', {}, `Archivo: ${fileName}`)
-              );
-
-              // Enviar el mensaje al contacto
-              await xmpp.send(message);
-              console.log('Archivo enviado con éxito.');
-            }
-
-            // Solicitar información para enviar el archivo en base64
-            rl.question('JID del contacto al que deseas enviar el archivo: ', (contactJID) => {
-              rl.question('Ruta del archivo que deseas enviar: ', (filePath) => {
-                enviarArchivoBase64(contactJID, filePath)
-                  .then(() => {
-                    mainMenu(); // Vuelve al menú principal después de completar la opción
-                  })
-                  .catch((err) => {
-                    console.error('Error al enviar el archivo:', err);
-                    mainMenu(); // Vuelve al menú principal después de completar la opción
-                  });
-              });
-            });
-
-            break;
-
-          case "9":
             console.log("Eliminando cuenta...")
             // Lógica para la subopción 9.
 
@@ -1161,7 +1196,7 @@ async function login(username, password) {
             xmpp.send(stanza);
             showMenu()
     
-          case "10":
+          case "9":
           
             console.log("Cerrando sesión...")
             
